@@ -37,17 +37,11 @@ a.button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  height: env(titlebar-area-height, 44px);
-  padding-left: 12px;
-  padding-right: max(
-    12px,
-    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px)
-  );
+  height: 44px;
+  padding: 0 14px;
   background: rgba(10, 10, 10, 0.92);
   border-bottom: 1px solid #1f1f1f;
   backdrop-filter: blur(10px);
-  -webkit-app-region: drag;
-  app-region: drag;
   user-select: none;
 }
 

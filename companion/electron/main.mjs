@@ -420,6 +420,9 @@ async function signOut() {
 }
 
 function createWindow() {
+  // Use a normal Windows frame for reliability. The in-app titlebar still
+  // hosts brand + account; titleBarOverlay left some installs stuck hidden
+  // after the v0.3.7 update (ready-to-show never fired).
   mainWindow = new BrowserWindow({
     width: 960,
     height: 680,
@@ -430,12 +433,6 @@ function createWindow() {
     show: false,
     title: "SplitMeta",
     icon: getAppIcon(),
-    titleBarStyle: "hidden",
-    titleBarOverlay: {
-      color: "#0a0a0a",
-      symbolColor: "#d4d4d4",
-      height: 44,
-    },
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -446,19 +443,38 @@ function createWindow() {
 
   mainWindow.webContents.on("did-fail-load", (_event, code, desc, url) => {
     console.error("Load failed:", code, desc, url);
+    revealWindow();
   });
 
   mainWindow.webContents.on("preload-error", (_event, preloadPath, err) => {
     console.error("Preload error:", preloadPath, err);
   });
 
-  mainWindow.once("ready-to-show", () => {
-    mainWindow?.show();
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    console.error("Renderer gone:", details);
+    revealWindow();
   });
 
-  mainWindow.loadFile(uiPath("index.html"));
+  let shown = false;
+  function revealWindow() {
+    if (shown || !mainWindow || mainWindow.isDestroyed()) return;
+    shown = true;
+    mainWindow.show();
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+
+  mainWindow.once("ready-to-show", revealWindow);
+  // Safety net so updates never leave a stuck hidden process.
+  setTimeout(revealWindow, 2000);
+
+  mainWindow.loadFile(uiPath("index.html")).catch((err) => {
+    console.error("loadFile failed:", err);
+    revealWindow();
+  });
 
   mainWindow.webContents.once("did-finish-load", () => {
+    revealWindow();
     initAutoUpdater(mainWindow);
   });
 }
