@@ -1,6 +1,6 @@
 {
   "name": "splitmeta",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "SplitMeta desktop app for iRacing",
   "author": "SplitMeta",
@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "generate-icon": "node scripts/generate-icon.mjs",
-    "build:app": "npm run generate-icon && electron-builder --win nsis",
+    "build:app": "npm run generate-icon && electron-builder --win nsis --publish never",
     "postinstall": "node ./node_modules/electron/install.js"
   },
   "engines": {

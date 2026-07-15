@@ -25,6 +25,8 @@ jobs:
 
       - name: Install and build
         working-directory: companion
+        # --publish never: packaging only; softprops uploads the release below.
+        # electron-builder publish needs GH_TOKEN and would fail the job otherwise.
         run: |
           npm ci
           npm run build:app
@@ -50,3 +52,5 @@ jobs:
             companion/dist/latest.yml
           make_latest: true
           fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
