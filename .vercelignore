@@ -1,0 +1,8 @@
+companion/dist
+companion/node_modules
+node_modules
+.next
+dev.db
+*.exe
+*.blockmap
+.admin-grant-secret.tmp
