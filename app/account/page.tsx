@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
-import { UploadKeyPanel } from "@/components/UploadKeyPanel";
 
 export const metadata = {
   title: "Account — SplitMeta",
@@ -22,11 +20,6 @@ export default async function AccountPage({ searchParams }: Props) {
 
   const { checkout } = await searchParams;
   const isPro = session.user.plan === "PRO";
-
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { uploadApiKeyPrefix: true },
-  });
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -78,8 +71,6 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
         </div>
 
-        <UploadKeyPanel prefix={dbUser?.uploadApiKeyPrefix ?? null} />
-
         <div className="mt-8 overflow-hidden rounded-xl border border-neutral-800 bg-gradient-to-br from-neutral-900 to-neutral-950">
           <div className="border-b border-neutral-800 bg-neutral-900/80 px-6 py-4">
             <p className="text-sm text-neutral-500">Windows companion</p>
@@ -89,14 +80,15 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
           <div className="px-6 py-5">
             <p className="text-sm text-neutral-400">
-              Download the uploader, paste your API key once, and forget about
-              it — uploads happen after every race.
+              Download while signed in — your account links automatically. Run{" "}
+              <code className="text-neutral-300">install.bat</code> once, then{" "}
+              <code className="text-neutral-300">START.bat</code> before racing.
             </p>
             <Link
               href="/download"
               className="mt-4 inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2.5 font-semibold text-white hover:bg-red-500"
             >
-              Download companion
+              Download &amp; connect
               <span aria-hidden className="text-red-200">
                 →
               </span>

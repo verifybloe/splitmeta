@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 
 const CONFIG_DIR = join(
@@ -20,7 +21,6 @@ export function defaultConfig() {
     apiKey: "",
     siteUrl: "https://www.splitmeta.net",
     telemetryDir: DEFAULT_TELEMETRY_DIR,
-    // uploaded subsession IDs, kept so restarts don't re-upload
     uploaded: [],
   };
 }
@@ -43,39 +43,44 @@ export function configPath() {
   return CONFIG_PATH;
 }
 
+function companionConnectPath() {
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "connect.json");
+}
+
+export function importConnectFile() {
+  const path = companionConnectPath();
+  if (!existsSync(path)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8"));
+    const config = { ...defaultConfig(), ...parsed };
+    if (!config.apiKey?.startsWith("sm_")) return null;
+    saveConfig(config);
+    return config;
+  } catch {
+    return null;
+  }
+}
+
 export async function runSetupWizard(existing) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const config = existing ?? defaultConfig();
 
-  console.log("\n=== SplitMeta companion setup ===");
-  console.log("Get your API key at https://www.splitmeta.net/account\n");
+  console.log("\n=== SplitMeta companion setup ===\n");
 
-  const apiKey = (
-    await rl.question(
-      `API key${config.apiKey ? ` [current: ${config.apiKey.slice(0, 10)}…]` : ""}: `,
-    )
-  ).trim();
-  if (apiKey) config.apiKey = apiKey;
+  if (!config.apiKey?.startsWith("sm_")) {
+    console.error(
+      "No account link found. Download the companion again from https://www.splitmeta.net/download while signed in.",
+    );
+    rl.close();
+    process.exit(1);
+  }
 
   const telemetryDir = (
     await rl.question(`iRacing telemetry folder [${config.telemetryDir}]: `)
   ).trim();
   if (telemetryDir) config.telemetryDir = telemetryDir;
 
-  const siteUrl = (
-    await rl.question(`SplitMeta URL [${config.siteUrl}]: `)
-  ).trim();
-  if (siteUrl) config.siteUrl = siteUrl.replace(/\/+$/, "");
-
   rl.close();
-
-  if (!config.apiKey || !config.apiKey.startsWith("sm_")) {
-    console.error(
-      "\nNo valid API key entered (should start with sm_). Run setup again.",
-    );
-    process.exit(1);
-  }
-
   saveConfig(config);
   console.log(`\nSaved config to ${CONFIG_PATH}\n`);
   return config;

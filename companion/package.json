@@ -11,7 +11,6 @@
   "scripts": {
     "start": "node src/index.mjs",
     "setup": "node src/index.mjs --setup",
-    "dry-run": "node src/index.mjs --dry-run --upload-latest",
     "upload-latest": "node src/index.mjs --upload-latest"
   },
   "engines": {

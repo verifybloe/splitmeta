@@ -1,14 +1,19 @@
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { generateUploadApiKey } from "@/lib/ingest";
+import { companionZipStream } from "@/lib/companionPackage";
 
 export const runtime = "nodejs";
 
 const ZIP_NAME = "splitmeta-companion.zip";
 
-function zipPath() {
-  return join(process.cwd(), "companion", "dist", ZIP_NAME);
+function siteUrl(req: NextRequest) {
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.AUTH_URL ??
+    req.nextUrl.origin
+  ).replace(/\/+$/, "");
 }
 
 export async function GET(req: NextRequest) {
@@ -19,21 +24,24 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const path = zipPath();
-  if (!existsSync(path)) {
-    return NextResponse.json(
-      { error: "Companion package not available. Try again later." },
-      { status: 503 },
-    );
-  }
+  const key = generateUploadApiKey();
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      uploadApiKeyHash: key.hash,
+      uploadApiKeyPrefix: key.prefix,
+    },
+  });
 
-  const body = readFileSync(path);
+  const body = companionZipStream({
+    apiKey: key.raw,
+    siteUrl: siteUrl(req),
+  });
 
   return new NextResponse(body, {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${ZIP_NAME}"`,
-      "Content-Length": String(body.length),
       "Cache-Control": "private, no-store",
     },
   });

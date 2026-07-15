@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata = {
@@ -11,16 +10,11 @@ export const metadata = {
 const STEPS = [
   {
     title: "Download & extract",
-    body: "Save the zip anywhere on your PC and unzip the folder.",
-  },
-  {
-    title: "Get your API key",
-    body: "Generate a key on your account page — you'll paste it during setup.",
-    account: true,
+    body: "One zip — your account is already linked inside. Extract anywhere on your PC.",
   },
   {
     title: "Run install.bat",
-    body: "Double-click install.bat, paste your sm_… key, and confirm your telemetry folder.",
+    body: "Double-click install.bat. It connects your account and installs dependencies. Confirm your telemetry folder.",
   },
   {
     title: "Race with START.bat open",
@@ -41,13 +35,6 @@ export default async function DownloadPage() {
     redirect("/login?callbackUrl=/download");
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { uploadApiKeyPrefix: true },
-  });
-
-  const hasApiKey = Boolean(dbUser?.uploadApiKeyPrefix);
-
   return (
     <main className="relative flex-1 overflow-hidden bg-neutral-950 text-neutral-100">
       <div
@@ -63,12 +50,12 @@ export default async function DownloadPage() {
             Windows companion
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Upload races while you{" "}
-            <span className="text-red-500">sim</span> — zero clicks.
+            Download, install,{" "}
+            <span className="text-red-500">race</span> — it handles the rest.
           </h1>
           <p className="mt-4 text-lg text-neutral-400">
-            The SplitMeta companion watches your iRacing telemetry folder and
-            sends setup fingerprints + results after every race session.
+            Sign in on the website, download the zip, run install.bat once. Your
+            account connects automatically — no API keys to copy.
           </p>
           <p className="mt-2 text-sm text-neutral-500">
             Signed in as {session.user.email}
@@ -81,7 +68,7 @@ export default async function DownloadPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-red-400">
-                    Ready to install
+                    Connected to your account
                   </p>
                   <h2 className="mt-1 text-2xl font-bold">
                     SplitMeta Companion
@@ -98,15 +85,15 @@ export default async function DownloadPage() {
               <ul className="mt-6 space-y-2 text-sm text-neutral-300">
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-400">✓</span>
+                  Account linked automatically on download
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-emerald-400">✓</span>
                   Background watcher for new .ibt files
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-emerald-400">✓</span>
                   Auto-upload after each race
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-emerald-400">✓</span>
-                  install.bat + START.bat included
                 </li>
               </ul>
 
@@ -114,53 +101,29 @@ export default async function DownloadPage() {
                 href="/api/download/companion"
                 className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-red-500"
               >
-                Download for Windows
+                Download &amp; connect
                 <span aria-hidden className="text-red-200">
                   →
                 </span>
               </a>
+              <p className="mt-3 text-center text-xs text-neutral-500">
+                Re-download anytime to reconnect this PC
+              </p>
             </div>
 
-            <div
-              className={`rounded-xl border p-5 ${
-                hasApiKey
-                  ? "border-emerald-800/60 bg-emerald-950/20"
-                  : "border-amber-800/60 bg-amber-950/20"
-              }`}
-            >
-              <p
-                className={`text-sm font-medium ${
-                  hasApiKey ? "text-emerald-400" : "text-amber-400"
-                }`}
-              >
-                {hasApiKey ? "API key ready" : "API key needed before setup"}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
+              <p className="text-sm font-medium text-neutral-300">
+                Already installed?
               </p>
-              <p className="mt-1 text-sm text-neutral-300">
-                {hasApiKey ? (
-                  <>
-                    Your key starts with{" "}
-                    <code className="rounded bg-neutral-900 px-1.5 py-0.5 text-emerald-300">
-                      {dbUser!.uploadApiKeyPrefix}…
-                    </code>
-                    . Paste the full key when install.bat asks.
-                  </>
-                ) : (
-                  <>
-                    Generate your upload key first — install.bat will ask for it.
-                  </>
-                )}
+              <p className="mt-1 text-sm text-neutral-400">
+                Download again to refresh your account link, then run install.bat
+                in the extracted folder.
               </p>
-              <Link
-                href="/account"
-                className="mt-3 inline-block text-sm font-medium text-red-400 hover:text-red-300"
-              >
-                {hasApiKey ? "Rotate key on account →" : "Generate API key →"}
-              </Link>
             </div>
           </div>
 
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/80 p-6 backdrop-blur sm:p-8">
-            <h2 className="text-lg font-semibold">Setup in 4 steps</h2>
+            <h2 className="text-lg font-semibold">Setup in 3 steps</h2>
             <ol className="mt-6 space-y-0">
               {STEPS.map((step, i) => (
                 <li key={step.title} className="relative flex gap-4 pb-8 last:pb-0">
@@ -175,36 +138,7 @@ export default async function DownloadPage() {
                   </span>
                   <div className="pt-0.5">
                     <p className="font-medium">{step.title}</p>
-                    <p className="mt-1 text-sm text-neutral-400">
-                      {"account" in step && step.account ? (
-                        <>
-                          {hasApiKey ? (
-                            <>
-                              You already have a key — or{" "}
-                              <Link
-                                href="/account"
-                                className="text-red-400 hover:underline"
-                              >
-                                rotate it
-                              </Link>{" "}
-                              if needed.
-                            </>
-                          ) : (
-                            <>
-                              <Link
-                                href="/account"
-                                className="text-red-400 hover:underline"
-                              >
-                                Generate a key
-                              </Link>{" "}
-                              on your account page first.
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        step.body
-                      )}
-                    </p>
+                    <p className="mt-1 text-sm text-neutral-400">{step.body}</p>
                     {step.title === "Run install.bat" && (
                       <code className="mt-2 inline-block rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-neutral-300">
                         install.bat

@@ -4,13 +4,13 @@ import {
   loadConfig,
   saveConfig,
   runSetupWizard,
+  importConnectFile,
   configPath,
 } from "./config.mjs";
 import { createWatcher, listIbtFiles, processIbtFile } from "./watcher.mjs";
 
 const args = new Set(process.argv.slice(2));
 const isSetup = args.has("--setup");
-const isDryRun = args.has("--dry-run");
 const uploadLatest = args.has("--upload-latest");
 
 function log(event) {
@@ -32,7 +32,7 @@ function log(event) {
 }
 
 async function main() {
-  let config = loadConfig();
+  let config = loadConfig() ?? importConnectFile();
 
   if (isSetup || !config?.apiKey) {
     config = await runSetupWizard(config);
@@ -42,7 +42,7 @@ async function main() {
 
   if (!existsSync(config.telemetryDir)) {
     console.error(
-      `\nTelemetry folder not found:\n  ${config.telemetryDir}\n\nEnable iRacing telemetry logging or fix the path in setup.`,
+      `\nTelemetry folder not found:\n  ${config.telemetryDir}\n\nEnable iRacing telemetry logging or run install.bat again to change the path.`,
     );
     process.exit(1);
   }
@@ -53,7 +53,7 @@ async function main() {
       console.error("No .ibt files found in telemetry folder.");
       process.exit(1);
     }
-    const outcome = await processIbtFile(config, latest, { dryRun: isDryRun });
+    const outcome = await processIbtFile(config, latest);
     console.log(outcome);
     if (outcome.uploaded) saveConfig(config);
     return;

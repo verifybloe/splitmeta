@@ -167,8 +167,8 @@ export default async function Home() {
                 </h2>
                 <p className="mt-4 text-neutral-400">
                   Watches your iRacing telemetry folder and uploads race results
-                  in the background. Sign in with Google to download — same
-                  account as the website.
+                  in the background. Sign in, download once, run install.bat —
+                  your account connects automatically.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-neutral-300">
                   <li className="flex items-center gap-2">

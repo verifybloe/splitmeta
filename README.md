@@ -21,7 +21,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 - [x] Next.js app + landing + meta board (mock data)
 - [x] Prisma schema (Postgres) + Auth.js Google login + Stripe Checkout
 - [x] Neon DB + env vars configured in Vercel
-- [x] Ingest API (`POST /api/ingest/session`) + account upload API keys
+- [x] Ingest API (`POST /api/ingest/session`) + companion auto-connect on download
 - [x] Meta computation job (`GET/POST /api/cron/compute-meta`, nightly cron)
 - [x] Windows companion uploader (`companion/` — watches iRacing `.ibt` telemetry)
 
@@ -95,40 +95,9 @@ npm run dev
 
 ## Ingest API
 
-Upload race + setup data used later by the meta ranking job.
+Race + setup data is uploaded by the **Windows companion** after each session. Sign in at `/download`, grab the zip, run `install.bat` — your account links automatically.
 
-1. Sign in at `/account` → **Generate API key** (copy once)
-2. `POST https://www.splitmeta.net/api/ingest/session`
-3. Header: `Authorization: Bearer sm_...`
-
-Example body:
-
-```json
-{
-  "externalId": "iracing-sub-12345",
-  "series": "GT3 Fixed — Falken Tyre Sports Car Challenge",
-  "car": "Ferrari 296 GT3",
-  "track": "Circuit de Spa-Francorchamps",
-  "trackConfig": "Grand Prix",
-  "seasonYear": 2026,
-  "seasonQuarter": 3,
-  "weekNum": 4,
-  "sof": 2400,
-  "iratingBefore": 2310,
-  "iratingAfter": 2335,
-  "finishPos": 4,
-  "fieldSize": 18,
-  "incidents": 2,
-  "bestLapMs": 137821,
-  "avgLapMs": 139040,
-  "racedAt": "2026-07-14T22:15:00.000Z",
-  "setupParams": {
-    "rearWing": 8,
-    "frontARB": 5,
-    "LFColdPressure": 26.4
-  }
-}
-```
+The companion calls `POST /api/ingest/session` with a per-account token created at download time. Re-download to reconnect a PC.
 
 Identical `setupParams` in the same series week share one setup fingerprint. Re-sending the same `externalId` is a no-op (idempotent).
 
@@ -147,14 +116,5 @@ Optional env: `CRON_SECRET` — if set, send `Authorization: Bearer CRON_SECRET`
 See [`companion/README.md`](companion/README.md). Quick start:
 
 1. Sign in at `/download` on the site
-2. Download the zip, extract, run `install.bat`, paste your API key
+2. Click **Download & connect**, extract, run `install.bat`
 3. Run `START.bat` before racing
-
-Developers can still run from source:
-
-```powershell
-cd companion
-npm install
-npm run setup
-npm start
-```

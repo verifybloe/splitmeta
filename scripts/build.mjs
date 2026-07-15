@@ -19,5 +19,4 @@ if (canMigrate) {
   );
 }
 
-run("node scripts/package-companion.mjs");
 run("npx next build");
