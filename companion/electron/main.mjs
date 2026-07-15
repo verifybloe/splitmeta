@@ -430,6 +430,12 @@ function createWindow() {
     show: false,
     title: "SplitMeta",
     icon: getAppIcon(),
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      color: "#0a0a0a",
+      symbolColor: "#d4d4d4",
+      height: 44,
+    },
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,

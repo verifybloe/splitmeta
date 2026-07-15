@@ -77,9 +77,47 @@ function bindUpdateActions() {
   });
 }
 
+function titlebarHtml(session) {
+  const versionLabel = esc(
+    session?.appVersion || updateStatus.currentVersion || "",
+  );
+  const user = session
+    ? (() => {
+        const initial = esc(
+          (session.name || session.email || "?").slice(0, 1).toUpperCase(),
+        );
+        const planBadge =
+          session.plan === "PRO"
+            ? `<span class="badge badge-pro">Pro</span>`
+            : `<span class="badge badge-free">Free</span>`;
+        return `
+          <div class="titlebar-user no-drag">
+            <div class="avatar avatar-sm">${initial}</div>
+            <div class="titlebar-user-meta">
+              <div class="titlebar-email">${esc(session.email)}</div>
+              <div>${planBadge}</div>
+            </div>
+          </div>
+        `;
+      })()
+    : `<span class="titlebar-hint muted small no-drag">iRacing companion</span>`;
+
+  return `
+    <header class="titlebar">
+      <div class="titlebar-brand">
+        <img src="icon.png" alt="" class="app-logo app-logo-sm" width="22" height="22" />
+        <span class="brand brand-sm">Split<span>Meta</span></span>
+        ${versionLabel ? `<span class="titlebar-version">v${versionLabel}</span>` : ""}
+      </div>
+      <div class="titlebar-end">${user}</div>
+    </header>
+  `;
+}
+
 function renderLogin(error, mode = "signin") {
   currentSession = null;
   app.innerHTML = `
+    ${titlebarHtml(null)}
     <div class="shell login-wrap">
       <div class="card card-accent login-card">
         <p class="eyebrow">SplitMeta for iRacing</p>
@@ -249,11 +287,6 @@ function renderDashboard(session) {
   const watching = session.watching;
   const autoMode = session.autoMode;
   const telemetryOk = session.telemetryExists;
-  const initial = esc((session.name || session.email || "?").slice(0, 1).toUpperCase());
-  const planBadge =
-    session.plan === "PRO"
-      ? `<span class="badge badge-pro">Pro</span>`
-      : `<span class="badge badge-free">Free</span>`;
 
   const activity = (session.activity ?? [])
     .map((item) => {
@@ -268,8 +301,6 @@ function renderDashboard(session) {
       return `<li><time>${formatTime(item.time)}</time><span class="${cls}">${esc(item.message)}</span></li>`;
     })
     .join("");
-
-  const versionLabel = esc(session.appVersion || updateStatus.currentVersion || "");
 
   let statusDot = "status-paused";
   let statusText = "Paused";
@@ -290,24 +321,8 @@ function renderDashboard(session) {
   }
 
   app.innerHTML = `
-    <div class="shell">
-      <div class="header">
-        <div class="brand-row">
-          <img src="icon.png" alt="" class="app-logo" width="32" height="32" />
-          <div>
-            <div class="brand">Split<span>Meta</span></div>
-            <div class="muted small">v${versionLabel}</div>
-          </div>
-        </div>
-        <div class="user-block">
-          <div class="avatar">${initial}</div>
-          <div>
-            <div>${esc(session.email)}</div>
-            <div style="margin-top:4px">${planBadge}</div>
-          </div>
-        </div>
-      </div>
-
+    ${titlebarHtml(session)}
+    <div class="shell shell-with-titlebar">
       ${updateBannerHtml()}
       ${briefingHtml(session.latestBriefing)}
 
