@@ -207,7 +207,6 @@ async function finishLoginFromCredentials(creds) {
   });
   saveSession(session);
   await validateSession();
-  startWatcher();
   broadcastState();
   return publicSession();
 }
@@ -249,7 +248,6 @@ async function signInGoogle() {
   await shell.openExternal(connectUrl);
   session = await authPromise;
   await validateSession();
-  startWatcher();
   broadcastState();
   return publicSession();
 }
@@ -327,9 +325,7 @@ app.whenReady().then(async () => {
 
   if (session && isLoggedIn(session)) {
     const ok = await validateSession();
-    if (ok) {
-      startWatcher();
-    } else {
+    if (!ok) {
       clearSession();
       session = null;
     }
@@ -396,8 +392,6 @@ ipcMain.handle("pick-telemetry-dir", async () => {
   if (!session) return null;
   session.telemetryDir = result.filePaths[0];
   saveSession(session);
-  stopWatcher();
-  startWatcher();
   broadcastState();
   return session.telemetryDir;
 });

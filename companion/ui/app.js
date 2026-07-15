@@ -144,7 +144,7 @@ function renderDashboard(session) {
             ${watching ? "Watching" : "Paused"}
           </div>
           <p class="muted small" style="margin-top:10px">
-            ${watching ? "New races upload automatically after each session." : "Start watching to resume uploads."}
+            ${watching ? "New races upload automatically after each session." : "Click Start watching before you race to enable uploads."}
           </p>
           <div class="toolbar">
             <button class="btn btn-primary" id="toggle-watcher">${watching ? "Pause" : "Start watching"}</button>
