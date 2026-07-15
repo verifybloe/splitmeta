@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import {
   formatRelativeTime,
   getLatestMetaBoard,
+  listLiveSeriesOptions,
   sampleDepthFromMeta,
 } from "@/lib/metaCompute";
 import { BillingButton } from "@/components/BillingButton";
@@ -22,23 +23,44 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams: Promise<{ band?: string }>;
+  searchParams: Promise<{ band?: string; series?: string }>;
 };
+
+function metaHref(opts: { band?: string; seriesId?: string }) {
+  const params = new URLSearchParams();
+  if (opts.seriesId) params.set("series", opts.seriesId);
+  if (opts.band) params.set("band", opts.band);
+  const q = params.toString();
+  return q ? `/meta?${q}` : "/meta";
+}
 
 export default async function MetaBoard({ searchParams }: Props) {
   const session = await auth();
   const isPro = session?.user?.plan === "PRO";
-  const { band } = await searchParams;
+  const { band, series: seriesParam } = await searchParams;
   const preferredBand =
     band && RATING_BANDS.some((b) => b.id === band) ? band : undefined;
 
-  // Never show mock filler on the real board — only live DB rankings.
-  const { meta, source } = await getLatestMetaBoard(preferredBand);
+  const seriesOptions = await listLiveSeriesOptions();
+  const selectedSeriesId =
+    seriesParam && seriesOptions.some((s) => s.seriesId === seriesParam)
+      ? seriesParam
+      : seriesOptions[0]?.seriesId;
+
+  // Current series week only — newest week with data for that series.
+  const { meta, source } = await getLatestMetaBoard(preferredBand, {
+    seriesId: selectedSeriesId,
+  });
   const hasLive = source === "live" && meta.entries.length > 0;
   const depth = sampleDepthFromMeta(meta);
   const updatedLabel = meta.computedAt
     ? formatRelativeTime(meta.computedAt)
     : "";
+
+  const activeSeries =
+    seriesOptions.find((s) => s.seriesId === (meta.seriesId ?? selectedSeriesId)) ??
+    seriesOptions[0] ??
+    null;
 
   const watching =
     isPro && session?.user?.id && meta.seriesId
@@ -83,6 +105,9 @@ export default async function MetaBoard({ searchParams }: Props) {
                     ? ` · ${depth.totalRaces} races · ${depth.setupCount} setups`
                     : ""}
                 </span>
+                <span className="rounded-full border border-neutral-800 px-2.5 py-1 text-neutral-500">
+                  Current week only
+                </span>
               </div>
             ) : null}
           </div>
@@ -105,28 +130,75 @@ export default async function MetaBoard({ searchParams }: Props) {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {RATING_BANDS.map((bandOption) => {
-            const active = bandOption.id === meta.band;
-            return (
-              <Link
-                key={bandOption.id}
-                href={`/meta?band=${bandOption.id}`}
-                className={
-                  active
-                    ? "rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white"
-                    : "rounded-full border border-neutral-800 px-4 py-1.5 text-sm text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
-                }
-              >
-                {bandOption.label}
-              </Link>
-            );
-          })}
+        {seriesOptions.length > 0 ? (
+          <div className="mt-8">
+            <p className="mb-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+              Series
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {seriesOptions.map((option) => {
+                const active =
+                  option.seriesId ===
+                  (meta.seriesId ?? selectedSeriesId ?? activeSeries?.seriesId);
+                return (
+                  <Link
+                    key={option.seriesId}
+                    href={metaHref({
+                      seriesId: option.seriesId,
+                      band: preferredBand ?? meta.band,
+                    })}
+                    className={
+                      active
+                        ? "rounded-lg border border-red-600/60 bg-red-600/15 px-3 py-2 text-sm font-medium text-red-300"
+                        : "rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
+                    }
+                    title={`${option.seasonLabel} · Week ${option.weekNum} · ${option.track}`}
+                  >
+                    <span className="block max-w-[16rem] truncate">
+                      {option.name}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-neutral-500">
+                      Week {option.weekNum}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+            iRating band
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {RATING_BANDS.map((bandOption) => {
+              const active = bandOption.id === meta.band;
+              return (
+                <Link
+                  key={bandOption.id}
+                  href={metaHref({
+                    seriesId: selectedSeriesId ?? meta.seriesId,
+                    band: bandOption.id,
+                  })}
+                  className={
+                    active
+                      ? "rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white"
+                      : "rounded-full border border-neutral-800 px-4 py-1.5 text-sm text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
+                  }
+                >
+                  {bandOption.label}
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {!hasLive ? (
           <div className="mt-10 rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center">
-            <p className="text-lg font-semibold">No live meta for this band yet</p>
+            <p className="text-lg font-semibold">
+              No live meta for this series / band yet
+            </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-neutral-400">
               Rankings appear after drivers upload races with the SplitMeta app.
               Race with the companion watching, then refresh this page.

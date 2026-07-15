@@ -302,14 +302,90 @@ function emptyWeeklyMeta(preferredBand?: string): WeeklyMetaView {
   };
 }
 
+export type LiveSeriesOption = {
+  seriesId: string;
+  name: string;
+  weekNum: number;
+  seasonLabel: string;
+  track: string;
+  seriesWeekId: string;
+};
+
+/**
+ * Series that currently have live meta — each entry is that series' newest
+ * week with data. No past-week browsing.
+ */
+export async function listLiveSeriesOptions(): Promise<LiveSeriesOption[]> {
+  try {
+    const rows = await prisma.weeklyMeta.findMany({
+      select: {
+        seriesWeekId: true,
+        computedAt: true,
+        seriesWeek: {
+          select: {
+            id: true,
+            weekNum: true,
+            seasonYear: true,
+            seasonQuarter: true,
+            seriesId: true,
+            series: { select: { id: true, name: true } },
+            track: { select: { name: true, config: true } },
+          },
+        },
+      },
+      orderBy: { computedAt: "desc" },
+    });
+
+    const bestBySeries = new Map<
+      string,
+      {
+        option: LiveSeriesOption;
+        sortKey: number;
+      }
+    >();
+
+    for (const row of rows) {
+      const sw = row.seriesWeek;
+      const seriesId = sw.seriesId;
+      const sortKey =
+        sw.seasonYear * 10000 + sw.seasonQuarter * 100 + sw.weekNum;
+      const existing = bestBySeries.get(seriesId);
+      if (existing && existing.sortKey >= sortKey) continue;
+
+      const track = sw.track.config
+        ? `${sw.track.name} — ${sw.track.config}`
+        : sw.track.name;
+
+      bestBySeries.set(seriesId, {
+        sortKey,
+        option: {
+          seriesId,
+          name: sw.series.name,
+          weekNum: sw.weekNum,
+          seasonLabel: `${sw.seasonYear} Season ${sw.seasonQuarter}`,
+          track,
+          seriesWeekId: sw.id,
+        },
+      });
+    }
+
+    return [...bestBySeries.values()]
+      .sort((a, b) => b.sortKey - a.sortKey)
+      .map((x) => x.option);
+  } catch {
+    return [];
+  }
+}
+
 export async function getLatestMetaBoard(
   preferredBand?: string,
-  options?: { allowMock?: boolean },
+  options?: { allowMock?: boolean; seriesId?: string },
 ): Promise<{
   meta: WeeklyMetaView;
   source: "live" | "mock" | "empty";
 }> {
   const allowMock = options?.allowMock === true;
+  const seriesId = options?.seriesId;
 
   try {
     const bandFilter = preferredBand
@@ -317,8 +393,16 @@ export async function getLatestMetaBoard(
       : undefined;
 
     const latest = await prisma.weeklyMeta.findFirst({
-      where: bandFilter,
-      orderBy: { computedAt: "desc" },
+      where: {
+        ...bandFilter,
+        ...(seriesId ? { seriesWeek: { seriesId } } : {}),
+      },
+      orderBy: [
+        { seriesWeek: { seasonYear: "desc" } },
+        { seriesWeek: { seasonQuarter: "desc" } },
+        { seriesWeek: { weekNum: "desc" } },
+        { computedAt: "desc" },
+      ],
       include: {
         seriesWeek: { select: { seriesId: true } },
       },
