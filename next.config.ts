@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    viewTransition: true,
+  },
   serverExternalPackages: ["pg", "@prisma/adapter-pg", "archiver"],
   outputFileTracingIncludes: {
     "/api/download/companion": [

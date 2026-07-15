@@ -9,7 +9,6 @@ import {
   getLatestMetaBoard,
   sampleDepthFromMeta,
 } from "@/lib/metaCompute";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 
 export const metadata = {
@@ -39,8 +38,6 @@ export default async function MetaBoard({ searchParams }: Props) {
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
-      <SiteHeader />
-
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

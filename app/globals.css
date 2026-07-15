@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --duration-exit: 160ms;
+  --duration-enter: 220ms;
 }
 
 @theme inline {
@@ -22,5 +24,71 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Soft page transitions (View Transitions API via Next experimental flag) */
+::view-transition-old(.page-fade) {
+  animation:
+    var(--duration-exit) ease-out both page-fade-out,
+    var(--duration-exit) ease-out both page-rise-out;
+}
+::view-transition-new(.page-fade) {
+  animation:
+    var(--duration-enter) ease-out var(--duration-exit) both page-fade-in,
+    var(--duration-enter) ease-out var(--duration-exit) both page-rise-in;
+}
+
+@keyframes page-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes page-rise-out {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}
+@keyframes page-rise-in {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Keep chrome steady while page content transitions */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { SiteHeader } from "@/components/SiteHeader";
 import { LoginForm } from "@/components/LoginForm";
 
 export const metadata = {
@@ -23,7 +22,6 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <main className="flex flex-1 flex-col bg-neutral-950 text-neutral-100">
-      <SiteHeader />
       <div className="flex flex-1 items-center justify-center px-6 py-16">
         <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900 p-8 text-center shadow-xl">
           <h1 className="text-2xl font-bold">

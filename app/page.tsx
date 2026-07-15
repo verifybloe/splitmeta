@@ -2,7 +2,6 @@ import Link from "next/link";
 import { formatPaceDelta } from "@/lib/mockMeta";
 import { getLatestMetaBoard, getUserWeekPulse } from "@/lib/metaCompute";
 import { auth } from "@/auth";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 import { YourWeekHero } from "@/components/YourWeekHero";
 
@@ -36,8 +35,6 @@ export default async function Home() {
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
-      <SiteHeader />
-
       {pulse ? (
         <YourWeekHero
           pulse={pulse}

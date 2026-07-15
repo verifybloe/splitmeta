@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata = {
   title: "Download app — SplitMeta",
@@ -41,8 +40,6 @@ export default async function DownloadPage() {
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(220,38,38,0.18),transparent)]"
       />
-
-      <SiteHeader />
 
       <div className="relative mx-auto max-w-5xl px-6 pb-20 pt-14">
         <div className="max-w-2xl">

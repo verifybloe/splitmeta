@@ -7,7 +7,10 @@ export async function SiteHeader() {
   const isPro = session?.user?.plan === "PRO";
 
   return (
-    <header className="border-b border-neutral-800">
+    <header
+      className="border-b border-neutral-800"
+      style={{ viewTransitionName: "site-header" }}
+    >
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-lg font-bold tracking-tight">
           Split<span className="text-red-500">Meta</span>

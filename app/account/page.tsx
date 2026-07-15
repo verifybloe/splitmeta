@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { buildPostRaceBriefing, getUserRecentRaces } from "@/lib/metaCompute";
 import { iratingToBand, shortFingerprint } from "@/lib/ingest";
-import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 import { PostRaceBriefingCard } from "@/components/PostRaceBriefingCard";
 
@@ -58,7 +57,6 @@ export default async function AccountPage({ searchParams }: Props) {
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
-      <SiteHeader />
       <div className="mx-auto max-w-2xl px-6 py-12">
         <h1 className="text-2xl font-bold">Account</h1>
         <p className="mt-1 text-neutral-400">{session.user.email}</p>

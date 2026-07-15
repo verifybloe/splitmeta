@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { issueCompanionCredentials } from "@/lib/companionConnect";
-import { SiteHeader } from "@/components/SiteHeader";
 import { CompanionConnectRedirect } from "@/components/CompanionConnectRedirect";
 
 export const metadata = {
@@ -40,7 +39,6 @@ export default async function CompanionConnectPage({ searchParams }: Props) {
   if (!validPort || !validState) {
     return (
       <main className="flex-1 bg-neutral-950 text-neutral-100">
-        <SiteHeader />
         <div className="mx-auto max-w-md px-6 py-20 text-center">
           <h1 className="text-xl font-bold">Invalid connect request</h1>
           <p className="mt-2 text-sm text-neutral-400">
