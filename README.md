@@ -23,7 +23,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 - [x] Neon DB + env vars configured in Vercel
 - [x] Ingest API (`POST /api/ingest/session`) + account upload API keys
 - [x] Meta computation job (`GET/POST /api/cron/compute-meta`, nightly cron)
-- [ ] Windows companion uploader
+- [x] Windows companion uploader (`companion/` — watches iRacing `.ibt` telemetry)
 
 ## Tech stack
 
@@ -141,3 +141,16 @@ Rankings are recomputed:
 - manually: open/post `https://www.splitmeta.net/api/cron/compute-meta`
 
 Optional env: `CRON_SECRET` — if set, send `Authorization: Bearer CRON_SECRET`.
+
+## Windows companion uploader
+
+See [`companion/README.md`](companion/README.md). Quick start:
+
+```powershell
+cd companion
+npm install
+npm run setup
+npm start
+```
+
+Requires iRacing telemetry logging (`.ibt` files in `Documents/iRacing/telemetry`).
