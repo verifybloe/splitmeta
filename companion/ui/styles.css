@@ -40,6 +40,23 @@ a.button {
   letter-spacing: -0.02em;
 }
 
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.app-logo-lg {
+  margin: 16px auto 0;
+  display: block;
+  border-radius: 14px;
+}
+
 .brand span {
   color: #ef4444;
 }

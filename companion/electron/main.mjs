@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, BrowserWindow, ipcMain, shell, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage } from "electron";
 import {
   loadSession,
   saveSession,
@@ -33,7 +33,16 @@ function uiPath(file) {
 }
 
 function iconPath() {
+  const ico = path.join(appRoot(), "assets", "icon.ico");
+  if (existsSync(ico)) return ico;
   return path.join(appRoot(), "assets", "icon.png");
+}
+
+function getAppIcon() {
+  const file = iconPath();
+  if (!existsSync(file)) return undefined;
+  const image = nativeImage.createFromPath(file);
+  return image.isEmpty() ? undefined : image;
 }
 
 function send(channel, payload) {
@@ -279,7 +288,7 @@ function createWindow() {
     autoHideMenuBar: true,
     show: false,
     title: "SplitMeta",
-    icon: existsSync(iconPath()) ? iconPath() : undefined,
+    icon: getAppIcon(),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,

@@ -24,6 +24,7 @@ function renderLogin(error, mode = "signin") {
     <div class="shell login-wrap">
       <div class="card card-accent login-card">
         <p class="eyebrow">SplitMeta for iRacing</p>
+        <img src="icon.png" alt="" class="app-logo app-logo-lg" width="56" height="56" />
         <h1>${mode === "register" ? "Create account" : "Sign in"}</h1>
         <p class="muted small">Same account as splitmeta.net — email or Google.</p>
 
@@ -126,7 +127,10 @@ function renderDashboard(session) {
   app.innerHTML = `
     <div class="shell">
       <div class="header">
-        <div class="brand">Split<span>Meta</span></div>
+        <div class="brand-row">
+          <img src="icon.png" alt="" class="app-logo" width="32" height="32" />
+          <div class="brand">Split<span>Meta</span></div>
+        </div>
         <div class="user-block">
           <div class="avatar">${initial}</div>
           <div>

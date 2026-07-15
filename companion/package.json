@@ -1,6 +1,6 @@
 {
   "name": "splitmeta",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "SplitMeta desktop app for iRacing",
   "author": "SplitMeta",
@@ -8,7 +8,8 @@
   "main": "electron/main.mjs",
   "scripts": {
     "start": "electron .",
-    "build:app": "electron-builder --win nsis",
+    "generate-icon": "node scripts/generate-icon.mjs",
+    "build:app": "npm run generate-icon && electron-builder --win nsis",
     "postinstall": "node ./node_modules/electron/install.js"
   },
   "engines": {
@@ -19,12 +20,14 @@
   },
   "devDependencies": {
     "electron": "^33.2.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^2.1.8"
   },
   "build": {
     "appId": "net.splitmeta.app",
     "productName": "SplitMeta",
     "copyright": "Copyright © SplitMeta",
+    "icon": "assets/icon.ico",
     "directories": {
       "output": "dist"
     },
@@ -43,8 +46,7 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "assets/icon.png",
-      "signAndEditExecutable": false
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": true,
