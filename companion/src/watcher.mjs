@@ -4,7 +4,47 @@ import { readSessionInfoYaml } from "./ibt.mjs";
 import { parseSessionYaml } from "./sessionParse.mjs";
 import { uploadSession } from "./upload.mjs";
 
-const STABLE_MS = 3000;
+// iRacing often keeps .ibt files locked for a bit after the session ends.
+const STABLE_MS = 8000;
+const RETRY_DELAY_MS = 5000;
+const MAX_RETRIES = 12;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isBusyError(err) {
+  const code = err?.code ?? "";
+  const message = err instanceof Error ? err.message : String(err);
+  return (
+    code === "EBUSY" ||
+    code === "EPERM" ||
+    code === "EACCES" ||
+    /EBUSY|resource busy|locked/i.test(message)
+  );
+}
+
+async function waitForFileReady(filePath) {
+  let lastSize = -1;
+  let stableCount = 0;
+
+  for (let i = 0; i < 20; i++) {
+    if (!existsSync(filePath)) {
+      await sleep(1000);
+      continue;
+    }
+
+    const size = statSync(filePath).size;
+    if (size > 0 && size === lastSize) {
+      stableCount += 1;
+      if (stableCount >= 2) return;
+    } else {
+      stableCount = 0;
+      lastSize = size;
+    }
+    await sleep(1500);
+  }
+}
 
 export function listIbtFiles(dir) {
   if (!existsSync(dir)) return [];
@@ -15,27 +55,45 @@ export function listIbtFiles(dir) {
 }
 
 export async function processIbtFile(config, filePath, { dryRun = false } = {}) {
-  const yamlText = readSessionInfoYaml(filePath);
-  const payload = parseSessionYaml(yamlText, filePath);
+  await waitForFileReady(filePath);
 
-  if (
-    payload.sessionType &&
-    !payload.sessionType.toLowerCase().includes("race")
-  ) {
-    return { skipped: true, reason: `not a race session (${payload.sessionType})` };
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const yamlText = readSessionInfoYaml(filePath);
+      const payload = parseSessionYaml(yamlText, filePath);
+
+      if (
+        payload.sessionType &&
+        !payload.sessionType.toLowerCase().includes("race")
+      ) {
+        return {
+          skipped: true,
+          reason: `not a race session (${payload.sessionType})`,
+        };
+      }
+
+      if (payload.finishPos <= 0) {
+        return { skipped: true, reason: "no finish position in telemetry" };
+      }
+
+      if (dryRun) {
+        console.log("[dry-run] Would upload:", payload);
+        return { dryRun: true, payload };
+      }
+
+      const result = await uploadSession(config, payload);
+      return { uploaded: true, payload, result };
+    } catch (err) {
+      lastError = err;
+      if (!isBusyError(err) || attempt === MAX_RETRIES) {
+        throw err;
+      }
+      await sleep(RETRY_DELAY_MS);
+    }
   }
 
-  if (payload.finishPos <= 0) {
-    return { skipped: true, reason: "no finish position in telemetry" };
-  }
-
-  if (dryRun) {
-    console.log("[dry-run] Would upload:", payload);
-    return { dryRun: true, payload };
-  }
-
-  const result = await uploadSession(config, payload);
-  return { uploaded: true, payload, result };
+  throw lastError ?? new Error("Failed to process telemetry file");
 }
 
 export function createWatcher(config, onEvent) {
@@ -77,9 +135,8 @@ export function createWatcher(config, onEvent) {
   }
 
   function scanExisting() {
-    for (const file of listIbtFiles(config.telemetryDir).slice(0, 3)) {
-      schedule(file);
-    }
+    // Only look at brand-new files via fs.watch after start —
+    // don't auto-process old races when clicking Start watching.
   }
 
   let watcher;
