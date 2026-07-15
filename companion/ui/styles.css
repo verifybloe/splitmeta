@@ -28,91 +28,10 @@ a.button {
   font: inherit;
 }
 
-/* Merged custom title bar (Electron titleBarOverlay on Windows) */
-.titlebar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  height: 44px;
-  padding: 0 14px;
-  background: rgba(10, 10, 10, 0.92);
-  border-bottom: 1px solid #1f1f1f;
-  backdrop-filter: blur(10px);
-  user-select: none;
-}
-
-.titlebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.titlebar-end {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.titlebar-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.titlebar-user-meta {
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.titlebar-email {
-  font-size: 0.78rem;
-  color: #e5e5e5;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-}
-
-.titlebar-version,
-.titlebar-hint {
-  font-size: 0.72rem;
-  color: #737373;
-}
-
-.brand-sm {
-  font-size: 0.95rem;
-}
-
-.app-logo-sm {
-  border-radius: 6px;
-}
-
-.avatar-sm {
-  width: 28px;
-  height: 28px;
-  font-size: 0.75rem;
-}
-
-.no-drag {
-  -webkit-app-region: no-drag;
-  app-region: no-drag;
-}
-
 .shell {
   max-width: 900px;
   margin: 0 auto;
   padding: 28px 24px 40px;
-}
-
-.shell-with-titlebar {
-  padding-top: 20px;
 }
 
 .brand {
@@ -155,7 +74,7 @@ a.button {
 }
 
 .login-wrap {
-  min-height: calc(100vh - 44px);
+  min-height: calc(100vh - 80px);
   display: grid;
   place-items: center;
 }
