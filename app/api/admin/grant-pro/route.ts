@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { email?: string };
+  let body: { email?: string; action?: string };
   try {
     body = await req.json();
   } catch {
@@ -33,6 +33,28 @@ export async function POST(req: Request) {
     where: { email },
     select: { id: true, email: true, plan: true },
   });
+
+  if (body.action === "revoke") {
+    if (!existing) {
+      return NextResponse.json({ error: `No user found for ${email}` }, { status: 404 });
+    }
+    const user = await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        plan: "FREE",
+        stripeSubscriptionId: null,
+        stripePriceId: null,
+        stripeCurrentPeriodEnd: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        plan: true,
+        stripeCurrentPeriodEnd: true,
+      },
+    });
+    return NextResponse.json({ ok: true, revoked: true, user });
+  }
 
   // Comp Pro only — never elevates to any admin role (there isn't one).
   // Creates the user shell if they haven't signed up yet so Google/email
