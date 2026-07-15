@@ -78,6 +78,7 @@ export async function POST() {
       mode: "subscription",
       customer: customerId,
       line_items: [{ price: getStripePriceId(), quantity: 1 }],
+      payment_method_types: ["card"],
       success_url: `${getAppUrl()}/account?checkout=success`,
       cancel_url: `${getAppUrl()}/account?checkout=canceled`,
       metadata: { userId: user.id },
