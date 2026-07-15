@@ -1,19 +1,53 @@
 {
-  "name": "splitmeta-companion",
+  "name": "splitmeta",
   "version": "0.2.0",
   "private": true,
-  "description": "SplitMeta desktop app — sign in, dashboard, auto-upload iRacing telemetry",
+  "description": "SplitMeta desktop app for iRacing — dashboard, sign-in, auto-upload telemetry",
+  "author": "SplitMeta",
   "type": "module",
   "main": "electron/main.mjs",
   "scripts": {
     "start": "electron .",
-    "cli": "node src/index.mjs"
+    "build:app": "electron-builder --win portable",
+    "postinstall": "node ./node_modules/electron/install.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "electron": "^33.2.1",
     "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "net.splitmeta.app",
+    "productName": "SplitMeta",
+    "copyright": "Copyright © SplitMeta",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "ui/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "SplitMeta.exe",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "SplitMeta.exe"
+    }
   }
 }

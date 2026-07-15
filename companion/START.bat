@@ -1,18 +1,10 @@
 @echo off
-title SplitMeta
 cd /d "%~dp0"
 
-where node >nul 2>nul
-if errorlevel 1 (
-  echo Install Node.js from https://nodejs.org
-  pause
-  exit /b 1
+if exist "dist\SplitMeta.exe" (
+  start "" "%~dp0dist\SplitMeta.exe"
+  exit /b 0
 )
 
-if not exist node_modules (
-  echo Run install.bat first.
-  pause
-  exit /b 1
-)
-
-npm start
+mshta "javascript:alert('Please run Setup.bat first to install SplitMeta.\n\nAfter setup, use the Desktop shortcut.');close()"
+exit /b 1

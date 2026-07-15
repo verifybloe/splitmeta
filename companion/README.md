@@ -1,42 +1,39 @@
 # SplitMeta Desktop App
 
-Windows app with dashboard, Google sign-in (same account as splitmeta.net), and automatic race uploads.
+Professional Windows app with dashboard, Google sign-in, and automatic race uploads.
 
-## Setup
+## Install (one time)
 
-1. Download from [splitmeta.net/download](https://www.splitmeta.net/download) while signed in on the website
-2. Extract the zip and run **install.bat** (installs dependencies + opens the app)
-3. Click **Continue with Google** in the app — uses your website account
-4. Leave the app running while you race (or use **START.bat** later)
+1. Download from [splitmeta.net/download](https://www.splitmeta.net/download)
+2. Extract the zip
+3. Double-click **Setup.bat**
+4. Wait for the build to finish — **SplitMeta** appears on your Desktop
 
-Your sign-in is remembered at `%APPDATA%\SplitMeta\session.json`.
+## Daily use
 
-## Dashboard
+Open **SplitMeta** from your Desktop shortcut. No console windows, no batch files.
 
-- Sign in / sign out
-- Watcher status (auto-upload after each race)
-- Telemetry folder picker
-- Recent upload activity
-- Open meta board in browser
+Sign in with Google (same account as splitmeta.net). The app remembers you.
 
 ## Requirements
 
-- Windows 10/11
-- Node.js 18+
+- Windows 10/11 (64-bit)
+- Node.js 18+ (for Setup only — [nodejs.org](https://nodejs.org))
 - iRacing telemetry logging enabled
 
 ## Troubleshooting
 
 | Issue | Fix |
 |---|---|
-| Sign in opens browser but app stays logged out | Click the redirect link on the connect page, or try again |
-| Folder not found | Enable telemetry in iRacing or pick the folder in the app |
-| Upload failed | Sign out and sign in again from the app |
+| Setup fails | Run Setup.bat as Administrator; check antivirus |
+| App won't open | Run Setup.bat again to rebuild SplitMeta.exe |
+| Sign in stuck | Complete Google login in browser, click redirect link |
 
 ## Developers
 
 ```powershell
 cd companion
 npm install
-npm start
+npm start          # dev window
+npm run build:app  # dist/SplitMeta.exe
 ```

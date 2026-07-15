@@ -19,6 +19,7 @@ import { createWatcher } from "../src/watcher.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PORT = 38491;
 const DEFAULT_SITE = "https://www.splitmeta.net";
+const APP_ICON = path.join(__dirname, "..", "assets", "icon.png");
 
 let mainWindow = null;
 let watcher = null;
@@ -214,7 +215,9 @@ function createWindow() {
     minHeight: 600,
     backgroundColor: "#0a0a0a",
     autoHideMenuBar: true,
+    show: false,
     title: "SplitMeta",
+    icon: existsSync(APP_ICON) ? APP_ICON : undefined,
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
@@ -222,10 +225,31 @@ function createWindow() {
     },
   });
 
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
+  });
+
   mainWindow.loadFile(uiPath("index.html"));
 }
 
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+if (process.platform === "win32") {
+  app.setAppUserModelId("net.splitmeta.app");
+}
+
 app.whenReady().then(async () => {
+  if (!gotLock) return;
   createWindow();
 
   if (session && isLoggedIn(session)) {

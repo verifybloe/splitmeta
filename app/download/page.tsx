@@ -4,25 +4,25 @@ import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata = {
-  title: "Download app — SplitMeta",
+    title: "Download app — SplitMeta",
 };
 
 const STEPS = [
   {
     title: "Download & extract",
-    body: "Get the Windows app zip and extract it anywhere on your PC.",
+    body: "Get the zip and open the splitmeta-companion folder.",
   },
   {
-    title: "Run install.bat",
-    body: "Installs dependencies and opens SplitMeta. First launch takes a minute.",
+    title: "Run Setup.bat once",
+    body: "Builds SplitMeta.exe and adds a Desktop shortcut. Takes a few minutes the first time.",
   },
   {
-    title: "Sign in with Google",
-    body: "Same account as splitmeta.net — the app remembers you after that.",
+    title: "Open SplitMeta from Desktop",
+    body: "A normal Windows app — no console windows. Sign in with Google (same as the website).",
   },
   {
     title: "Leave it running while you race",
-    body: "Use START.bat next time. Uploads happen automatically after each race.",
+    body: "Uploads happen automatically after each session.",
   },
 ] as const;
 

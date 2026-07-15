@@ -80,8 +80,9 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
           <div className="px-6 py-5">
             <p className="text-sm text-neutral-400">
-              Desktop app with dashboard. Sign in with Google (same as the
-              website) — it remembers you. Auto-uploads after each race.
+              Run <strong className="text-neutral-300">Setup.bat</strong> once,
+              then open SplitMeta from your Desktop — a normal Windows app, no
+              console windows.
             </p>
             <Link
               href="/download"

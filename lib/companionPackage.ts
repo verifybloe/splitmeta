@@ -30,9 +30,16 @@ export function buildCompanionZip(): PassThrough {
   archive.file(companionPath("install.bat"), {
     name: `${COMPANION_ROOT}/install.bat`,
   });
+  archive.file(companionPath("Setup.bat"), {
+    name: `${COMPANION_ROOT}/Setup.bat`,
+  });
+  archive.file(companionPath("SplitMeta.vbs"), {
+    name: `${COMPANION_ROOT}/SplitMeta.vbs`,
+  });
   archive.file(companionPath("START.bat"), {
     name: `${COMPANION_ROOT}/START.bat`,
   });
+  archive.directory(companionPath("assets"), `${COMPANION_ROOT}/assets`);
   archive.directory(companionPath("src"), `${COMPANION_ROOT}/src`);
   archive.directory(companionPath("electron"), `${COMPANION_ROOT}/electron`);
   archive.directory(companionPath("ui"), `${COMPANION_ROOT}/ui`);
