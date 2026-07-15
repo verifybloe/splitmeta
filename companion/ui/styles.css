@@ -348,3 +348,34 @@ h1 {
   width: min(420px, 100%);
   text-align: center;
 }
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.update-title {
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.update-progress {
+  margin-top: 10px;
+  height: 6px;
+  border-radius: 999px;
+  background: #262626;
+  overflow: hidden;
+}
+
+.update-progress-bar {
+  height: 100%;
+  background: #ef4444;
+  transition: width 0.2s ease;
+}
