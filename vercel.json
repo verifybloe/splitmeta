@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/compute-meta",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

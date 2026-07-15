@@ -5,6 +5,7 @@ import {
   fingerprintSetupParams,
   shortFingerprint,
 } from "@/lib/ingest";
+import { computeSeriesWeekMeta } from "@/lib/metaCompute";
 
 export const runtime = "nodejs";
 
@@ -306,6 +307,13 @@ export async function POST(req: Request) {
         where: { id: user.id },
         data: profilePatch,
       });
+    }
+
+    // Refresh rankings for this week so the board can leave mock data.
+    try {
+      await computeSeriesWeekMeta(seriesWeek.id);
+    } catch (err) {
+      console.error("Meta recompute after ingest failed:", err);
     }
 
     return NextResponse.json({

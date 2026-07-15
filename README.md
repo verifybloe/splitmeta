@@ -22,7 +22,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 - [x] Prisma schema (Postgres) + Auth.js Google login + Stripe Checkout
 - [x] Neon DB + env vars configured in Vercel
 - [x] Ingest API (`POST /api/ingest/session`) + account upload API keys
-- [ ] Meta computation job (nightly rankings)
+- [x] Meta computation job (`GET/POST /api/cron/compute-meta`, nightly cron)
 - [ ] Windows companion uploader
 
 ## Tech stack
@@ -131,3 +131,13 @@ Example body:
 ```
 
 Identical `setupParams` in the same series week share one setup fingerprint. Re-sending the same `externalId` is a no-op (idempotent).
+
+## Meta computation
+
+Rankings are recomputed:
+
+- automatically after each successful ingest (that series week)
+- nightly via Vercel Cron → `GET /api/cron/compute-meta` (06:00 UTC)
+- manually: open/post `https://www.splitmeta.net/api/cron/compute-meta`
+
+Optional env: `CRON_SECRET` — if set, send `Authorization: Bearer CRON_SECRET`.

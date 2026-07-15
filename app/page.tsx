@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { MOCK_WEEKLY_META, formatPaceDelta } from "@/lib/mockMeta";
+import { formatPaceDelta } from "@/lib/mockMeta";
+import { getLatestMetaBoard } from "@/lib/metaCompute";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 
-export default function Home() {
-  const meta = MOCK_WEEKLY_META;
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const { meta, source } = await getLatestMetaBoard();
   const topThree = meta.entries.slice(0, 3);
 
   return (
@@ -44,7 +47,7 @@ export default function Home() {
         <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold">
-              This week&apos;s top 3 — free teaser
+              This week&apos;s top 3 — {source === "live" ? "live" : "preview"}
             </h2>
             <span className="text-sm text-neutral-500">
               {meta.series} · Week {meta.weekNum} · {meta.bandLabel}
