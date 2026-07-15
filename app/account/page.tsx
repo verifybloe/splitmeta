@@ -6,7 +6,9 @@ import { iratingToBand, shortFingerprint } from "@/lib/ingest";
 import { BillingButton } from "@/components/BillingButton";
 import { PostRaceBriefingCard } from "@/components/PostRaceBriefingCard";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
+import { RaceTrends } from "@/components/RaceTrends";
 import { listMetaAlerts, listWatchlist } from "@/lib/watchlist";
+import { getUserTrends } from "@/lib/trends";
 
 export const metadata = {
   title: "Account — SplitMeta",
@@ -57,12 +59,11 @@ export default async function AccountPage({ searchParams }: Props) {
     ? `/meta?band=${iratingToBand(latest.iratingBefore)}`
     : "/meta";
 
-  const [watchItems, watchAlerts] = isPro
-    ? await Promise.all([
-        listWatchlist(session.user.id),
-        listMetaAlerts(session.user.id, { limit: 30 }),
-      ])
-    : [[], []];
+  const [watchItems, watchAlerts, trends] = await Promise.all([
+    isPro ? listWatchlist(session.user.id) : Promise.resolve([]),
+    isPro ? listMetaAlerts(session.user.id, { limit: 30 }) : Promise.resolve([]),
+    getUserTrends(session.user.id, 20),
+  ]);
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -118,6 +119,10 @@ export default async function AccountPage({ searchParams }: Props) {
             <PostRaceBriefingCard briefing={briefing} bandHref={bandHref} />
           </div>
         ) : null}
+
+        <div className="mt-8">
+          <RaceTrends trends={trends} isPro={isPro} />
+        </div>
 
         {isPro ? (
           <WatchlistPanel items={watchItems} alerts={watchAlerts} />

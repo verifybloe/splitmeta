@@ -17,6 +17,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 | Watchlist + meta-moved alerts | — | Yes |
 | Post-race briefing (rank, pace vs band, deltas) | — | Yes |
 | Recent race history & Your week home | — | Yes |
+| Personal trend charts (finish, lap, iR) | — | Yes |
 
 ## MVP checklist
 

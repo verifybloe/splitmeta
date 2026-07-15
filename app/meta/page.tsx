@@ -244,8 +244,8 @@ export default async function MetaBoard({ searchParams }: Props) {
               Unlock the full board for your band — $8/mo
             </p>
             <p className="mt-1 text-sm text-neutral-400">
-              Full rankings, parameter sheets, watchlist alerts, post-race
-              briefing, and your recent race history.
+              Full rankings, parameter sheets, watchlist alerts, trend charts,
+              post-race briefing, and your recent race history.
             </p>
             <div className="mt-4 flex justify-center gap-3">
               {session?.user ? (

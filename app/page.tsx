@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { formatPaceDelta } from "@/lib/mockMeta";
 import { getLatestMetaBoard, getUserWeekPulse } from "@/lib/metaCompute";
+import { getUserTrends } from "@/lib/trends";
 import { auth } from "@/auth";
 import { BillingButton } from "@/components/BillingButton";
 import { YourWeekHero } from "@/components/YourWeekHero";
+import { RaceTrends } from "@/components/RaceTrends";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,11 @@ export default async function Home() {
         )
       : null;
 
+  const trends =
+    isLoggedIn && session?.user?.id
+      ? await getUserTrends(session.user.id, 12)
+      : null;
+
   // Marketing preview only when logged out and no live DB rankings yet.
   const { meta, source } = await getLatestMetaBoard(
     pulse?.board?.band,
@@ -36,11 +43,20 @@ export default async function Home() {
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
       {pulse ? (
-        <YourWeekHero
-          pulse={pulse}
-          isPro={isPro}
-          name={session?.user?.name}
-        />
+        <>
+          <YourWeekHero
+            pulse={pulse}
+            isPro={isPro}
+            name={session?.user?.name}
+          />
+          {trends ? (
+            <div className="border-t border-neutral-800 bg-neutral-950">
+              <div className="mx-auto max-w-5xl px-6 py-12">
+                <RaceTrends trends={trends} isPro={isPro} compact />
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : (
         <section className="mx-auto max-w-5xl px-6 pb-16 pt-20 text-center">
           <p className="mb-4 text-sm font-medium uppercase tracking-widest text-red-500">
@@ -286,6 +302,7 @@ export default async function Home() {
                     <li>Setup parameter deltas</li>
                     <li>View / download full parameter sheets</li>
                     <li>Watchlist + meta-moved alerts</li>
+                    <li>Personal finish / iR trend charts</li>
                     <li>Post-race briefing in the app</li>
                     <li>Personal history &amp; your-week home</li>
                   </ul>
