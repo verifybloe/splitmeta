@@ -12,7 +12,14 @@ export async function SiteHeader() {
       style={{ viewTransitionName: "site-header" }}
     >
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-tight">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
+          <img
+            src="/favicon-32.png"
+            alt=""
+            width={28}
+            height={28}
+            className="rounded-md"
+          />
           Split<span className="text-red-500">Meta</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm text-neutral-400">
