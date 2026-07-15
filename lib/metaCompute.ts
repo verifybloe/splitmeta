@@ -225,6 +225,7 @@ export async function computeSeriesWeekMeta(seriesWeekId: string) {
         RATING_BANDS.find((b) => b.id === band)?.label ?? band,
       computedAt: new Date().toISOString(),
       seriesWeekId: seriesWeek.id,
+      seriesId: seriesWeek.seriesId,
       entries,
     };
 
@@ -245,6 +246,20 @@ export async function computeSeriesWeekMeta(seriesWeekId: string) {
         computedAt: new Date(),
       },
     });
+
+    try {
+      const { notifyWatchlistMetaMoved } = await import("@/lib/watchlist");
+      await notifyWatchlistMetaMoved({
+        seriesId: seriesWeek.seriesId,
+        seriesName: seriesWeek.series.name,
+        seriesWeekId: seriesWeek.id,
+        weekNum: seriesWeek.weekNum,
+        band,
+        meta: view,
+      });
+    } catch (err) {
+      console.error("watchlist notify failed:", err);
+    }
 
     bandsUpdated += 1;
   }
@@ -304,6 +319,9 @@ export async function getLatestMetaBoard(
     const latest = await prisma.weeklyMeta.findFirst({
       where: bandFilter,
       orderBy: { computedAt: "desc" },
+      include: {
+        seriesWeek: { select: { seriesId: true } },
+      },
     });
 
     if (latest) {
@@ -313,6 +331,7 @@ export async function getLatestMetaBoard(
           meta: {
             ...meta,
             seriesWeekId: meta.seriesWeekId ?? latest.seriesWeekId,
+            seriesId: meta.seriesId ?? latest.seriesWeek.seriesId,
           },
           source: "live",
         };
@@ -430,6 +449,13 @@ export type UserWeekPulse = {
     depth: ReturnType<typeof sampleDepthFromMeta>;
   } | null;
   briefing: PostRaceBriefing | null;
+  alerts: Array<{
+    id: string;
+    message: string;
+    bandLabel: string;
+    boardHref: string;
+    createdAt: string;
+  }>;
 };
 
 export async function getUserWeekPulse(
@@ -440,6 +466,19 @@ export async function getUserWeekPulse(
   const uploadCount = races.length;
   const latest = races[0] ?? null;
 
+  const { listMetaAlerts } = await import("@/lib/watchlist");
+  const alertRows =
+    plan === "PRO"
+      ? await listMetaAlerts(userId, { unreadOnly: true, limit: 5 })
+      : [];
+  const alerts = alertRows.map((a) => ({
+    id: a.id,
+    message: a.message,
+    bandLabel: a.bandLabel,
+    boardHref: a.boardHref,
+    createdAt: a.createdAt,
+  }));
+
   if (!latest) {
     return {
       hasRaces: false,
@@ -447,6 +486,7 @@ export async function getUserWeekPulse(
       lastRace: null,
       board: null,
       briefing: null,
+      alerts,
     };
   }
 
@@ -498,6 +538,7 @@ export async function getUserWeekPulse(
       lastRace,
       board: null,
       briefing,
+      alerts,
     };
   }
 
@@ -534,6 +575,7 @@ export async function getUserWeekPulse(
       depth,
     },
     briefing,
+    alerts,
   };
 }
 

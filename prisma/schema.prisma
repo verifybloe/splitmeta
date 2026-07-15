@@ -43,6 +43,8 @@ model User {
   sessions                 Session[]
   setups                   Setup[]
   sessionResults           SessionResult[]
+  watchlistItems           WatchlistItem[]
+  metaAlerts               MetaAlert[]
 }
 
 model Account {
@@ -96,10 +98,12 @@ model Track {
 }
 
 model Series {
-  id       String       @id @default(cuid())
-  name     String       @unique
-  category String
-  weeks    SeriesWeek[]
+  id              String          @id @default(cuid())
+  name            String          @unique
+  category        String
+  weeks           SeriesWeek[]
+  watchlistItems  WatchlistItem[]
+  metaAlerts      MetaAlert[]
 }
 
 model SeriesWeek {
@@ -168,4 +172,41 @@ model WeeklyMeta {
   payload      String
 
   @@unique([seriesWeekId, band])
+}
+
+/// Pro users pin a series + iRating band to get “meta moved” alerts.
+model WatchlistItem {
+  id                 String     @id @default(cuid())
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String
+  series             Series     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seriesId           String
+  band               RatingBand
+  lastTopFingerprint String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@unique([userId, seriesId, band])
+  @@index([seriesId, band])
+}
+
+model MetaAlert {
+  id              String     @id @default(cuid())
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  series          Series     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  seriesId        String
+  band            RatingBand
+  seriesWeekId    String
+  weekNum         Int
+  previousTop     String?
+  newTop          String
+  previousLabel   String?
+  newLabel        String?
+  message         String
+  readAt          DateTime?
+  createdAt       DateTime   @default(now())
+
+  @@index([userId, readAt, createdAt])
+  @@index([seriesId, band])
 }

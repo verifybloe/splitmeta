@@ -146,8 +146,35 @@ export function YourWeekHero({
                   Meta moved
                 </span>
               ) : null}
+              {pulse.alerts.length > 0 ? (
+                <span className="border border-red-600/40 bg-red-600/10 px-3 py-1.5 font-medium text-red-300">
+                  {pulse.alerts.length} watch alert
+                  {pulse.alerts.length === 1 ? "" : "s"}
+                </span>
+              ) : null}
             </div>
           </div>
+
+          {pulse.alerts.length > 0 ? (
+            <div className="mt-6 space-y-2">
+              {pulse.alerts.slice(0, 3).map((alert) => (
+                <Link
+                  key={alert.id}
+                  href={alert.boardHref}
+                  className="block rounded-md border border-red-900/40 bg-red-950/25 px-4 py-3 text-sm text-neutral-200 transition hover:border-red-700/60"
+                >
+                  <span className="font-medium text-red-400">Meta moved · </span>
+                  {alert.message}
+                </Link>
+              ))}
+              <Link
+                href="/account"
+                className="inline-block text-sm text-neutral-500 hover:text-neutral-300"
+              >
+                Manage watchlist →
+              </Link>
+            </div>
+          ) : null}
 
           <div className="mt-12 grid items-end gap-10 lg:mt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-16">
             <div>

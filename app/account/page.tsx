@@ -5,6 +5,8 @@ import { buildPostRaceBriefing, getUserRecentRaces } from "@/lib/metaCompute";
 import { iratingToBand, shortFingerprint } from "@/lib/ingest";
 import { BillingButton } from "@/components/BillingButton";
 import { PostRaceBriefingCard } from "@/components/PostRaceBriefingCard";
+import { WatchlistPanel } from "@/components/WatchlistPanel";
+import { listMetaAlerts, listWatchlist } from "@/lib/watchlist";
 
 export const metadata = {
   title: "Account — SplitMeta",
@@ -54,6 +56,13 @@ export default async function AccountPage({ searchParams }: Props) {
   const bandHref = latest
     ? `/meta?band=${iratingToBand(latest.iratingBefore)}`
     : "/meta";
+
+  const [watchItems, watchAlerts] = isPro
+    ? await Promise.all([
+        listWatchlist(session.user.id),
+        listMetaAlerts(session.user.id, { limit: 30 }),
+      ])
+    : [[], []];
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -108,6 +117,10 @@ export default async function AccountPage({ searchParams }: Props) {
           <div className="mt-8">
             <PostRaceBriefingCard briefing={briefing} bandHref={bandHref} />
           </div>
+        ) : null}
+
+        {isPro ? (
+          <WatchlistPanel items={watchItems} alerts={watchAlerts} />
         ) : null}
 
         <div className="mt-8 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">

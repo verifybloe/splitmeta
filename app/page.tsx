@@ -285,6 +285,7 @@ export default async function Home() {
                     <li>Full ranked meta board for your band</li>
                     <li>Setup parameter deltas</li>
                     <li>View / download full parameter sheets</li>
+                    <li>Watchlist + meta-moved alerts</li>
                     <li>Post-race briefing in the app</li>
                     <li>Personal history &amp; your-week home</li>
                   </ul>

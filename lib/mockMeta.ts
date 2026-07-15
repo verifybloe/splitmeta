@@ -24,6 +24,8 @@ export type WeeklyMetaView = {
   computedAt: string;
   /** Present on live boards — used for Pro setup detail lookups. */
   seriesWeekId?: string;
+  /** Present on live boards — used for watchlist pins. */
+  seriesId?: string;
   entries: MetaEntry[];
 };
 

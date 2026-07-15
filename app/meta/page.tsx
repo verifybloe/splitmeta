@@ -11,6 +11,9 @@ import {
 } from "@/lib/metaCompute";
 import { BillingButton } from "@/components/BillingButton";
 import { MetaSetupDetails } from "@/components/MetaSetupDetails";
+import { WatchlistButton } from "@/components/WatchlistButton";
+import { isWatching } from "@/lib/watchlist";
+import type { RatingBand } from "@/generated/prisma/client";
 
 export const metadata = {
   title: "Meta board — SplitMeta",
@@ -36,6 +39,15 @@ export default async function MetaBoard({ searchParams }: Props) {
   const updatedLabel = meta.computedAt
     ? formatRelativeTime(meta.computedAt)
     : "";
+
+  const watching =
+    isPro && session?.user?.id && meta.seriesId
+      ? await isWatching(
+          session.user.id,
+          meta.seriesId,
+          meta.band as RatingBand,
+        )
+      : false;
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -74,13 +86,23 @@ export default async function MetaBoard({ searchParams }: Props) {
               </div>
             ) : null}
           </div>
-          <span className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-400">
-            {hasLive
-              ? isPro
-                ? "Live meta · Pro unlocked"
-                : "Live meta · free top 3"
-              : "Waiting for race data"}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-400">
+              {hasLive
+                ? isPro
+                  ? "Live meta · Pro unlocked"
+                  : "Live meta · free top 3"
+                : "Waiting for race data"}
+            </span>
+            {isPro && hasLive && meta.seriesId ? (
+              <WatchlistButton
+                seriesId={meta.seriesId}
+                band={meta.band}
+                seedTopFingerprint={meta.entries[0]?.fingerprint ?? null}
+                initiallyWatching={watching}
+              />
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
@@ -222,7 +244,7 @@ export default async function MetaBoard({ searchParams }: Props) {
               Unlock the full board for your band — $8/mo
             </p>
             <p className="mt-1 text-sm text-neutral-400">
-              Full rankings, parameter sheets (view / download), post-race
+              Full rankings, parameter sheets, watchlist alerts, post-race
               briefing, and your recent race history.
             </p>
             <div className="mt-4 flex justify-center gap-3">
