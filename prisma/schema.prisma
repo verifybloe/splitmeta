@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+// Rating bands used to segment the meta. Numeric iRating is stored on results;
+// bands are what the meta is computed and displayed against.
+enum RatingBand {
+  ROOKIE_0_1350
+  D_1350_2000
+  C_2000_2700
+  B_2700_3500
+  A_3500_PLUS
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  iracingCustId  Int?            @unique
+  displayName    String?
+  plan           Plan            @default(FREE)
+  createdAt      DateTime        @default(now())
+  setups         Setup[]
+  sessionResults SessionResult[]
+}
+
+model Car {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  category String // e.g. "Sports Car", "Formula", "Oval"
+  setups   Setup[]
+}
+
+model Track {
+  id          String       @id @default(cuid())
+  name        String
+  config      String? // e.g. "Grand Prix", "Endurance"
+  seriesWeeks SeriesWeek[]
+
+  @@unique([name, config])
+}
+
+model Series {
+  id       String       @id @default(cuid())
+  name     String       @unique
+  category String
+  weeks    SeriesWeek[]
+}
+
+// One competition week of a series (season + week + track). The unit the meta
+// is computed against, since setups reset relevance when the track changes.
+model SeriesWeek {
+  id            String          @id @default(cuid())
+  series        Series          @relation(fields: [seriesId], references: [id])
+  seriesId      String
+  track         Track           @relation(fields: [trackId], references: [id])
+  trackId       String
+  seasonYear    Int
+  seasonQuarter Int // iRacing seasons: 1-4
+  weekNum       Int // 1-13
+  setups        Setup[]
+  results       SessionResult[]
+  weeklyMetas   WeeklyMeta[]
+
+  @@unique([seriesId, seasonYear, seasonQuarter, weekNum])
+}
+
+// A distinct setup as identified by its parameter fingerprint. Multiple drivers
+// running byte-identical setups map to the same row via fingerprint.
+model Setup {
+  id           String          @id @default(cuid())
+  fingerprint  String // hash of normalized setup parameters
+  params       String // JSON blob of parsed setup parameters
+  uploadedBy   User            @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+  car          Car             @relation(fields: [carId], references: [id])
+  carId        String
+  seriesWeek   SeriesWeek      @relation(fields: [seriesWeekId], references: [id])
+  seriesWeekId String
+  createdAt    DateTime        @default(now())
+  results      SessionResult[]
+
+  @@unique([fingerprint, seriesWeekId])
+  @@index([seriesWeekId, carId])
+}
+
+// One driver's race result while running a given setup. The raw signal the
+// weekly meta is aggregated from.
+model SessionResult {
+  id            String     @id @default(cuid())
+  user          User       @relation(fields: [userId], references: [id])
+  userId        String
+  setup         Setup      @relation(fields: [setupId], references: [id])
+  setupId       String
+  seriesWeek    SeriesWeek @relation(fields: [seriesWeekId], references: [id])
+  seriesWeekId  String
+  sof           Int // strength of field of the split
+  iratingBefore Int
+  iratingAfter  Int
+  finishPos     Int
+  fieldSize     Int
+  incidents     Int
+  bestLapMs     Int
+  avgLapMs      Int
+  racedAt       DateTime
+  createdAt     DateTime   @default(now())
+
+  @@index([seriesWeekId, sof])
+}
+
+// Precomputed ranking for one (series week x rating band), refreshed nightly.
+// payload holds the ranked entries: setup id, score, sample size, pace delta,
+// finish stats - everything the meta board renders.
+model WeeklyMeta {
+  id           String     @id @default(cuid())
+  seriesWeek   SeriesWeek @relation(fields: [seriesWeekId], references: [id])
+  seriesWeekId String
+  band         RatingBand
+  computedAt   DateTime   @default(now())
+  payload      String // JSON: ranked entries
+
+  @@unique([seriesWeekId, band])
+}
