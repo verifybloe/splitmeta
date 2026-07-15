@@ -287,6 +287,7 @@ export default async function Home() {
                     <li>View / download full parameter sheets</li>
                     <li>Watchlist + meta-moved alerts</li>
                     <li>Personal finish / iR trend charts</li>
+                    <li>Companion Auto mode</li>
                     <li>Post-race briefing in the app</li>
                     <li>Personal history &amp; your-week home</li>
                   </ul>

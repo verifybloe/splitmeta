@@ -97,6 +97,11 @@ async function validateSession() {
     session.name = data.user.name ?? session.name;
     session.plan = data.user.plan;
     session.uploadCount = data.uploads;
+    if (session.plan !== "PRO" && session.autoMode) {
+      session.autoMode = false;
+      stopAutoLoop();
+      lastAutoState = "";
+    }
     saveSession(session);
     return true;
   } catch {
@@ -231,6 +236,11 @@ async function tickAutoMode() {
 function startAutoLoop() {
   stopAutoLoop();
   if (!session?.autoMode) return;
+  if (session.plan !== "PRO") {
+    session.autoMode = false;
+    saveSession(session);
+    return;
+  }
   autoArmed = true;
   lastAutoState = "Waiting for iRacing session";
   void tickAutoMode();
@@ -242,6 +252,16 @@ function startAutoLoop() {
 
 function setAutoMode(enabled) {
   if (!session) return false;
+  if (enabled && session.plan !== "PRO") {
+    session.autoMode = false;
+    session = pushActivity(session, {
+      type: "info",
+      message: "Auto mode is Pro — upgrade on splitmeta.net/account",
+    });
+    saveSession(session);
+    broadcastState();
+    return false;
+  }
   session.autoMode = Boolean(enabled);
   if (session.autoMode) {
     session = pushActivity(session, {
@@ -703,15 +723,26 @@ ipcMain.handle("toggle-watcher", async () => {
 });
 
 ipcMain.handle("toggle-auto-mode", async () => {
-  if (!session || !isLoggedIn(session)) return false;
-  const next = !session.autoMode;
-  if (next && watcher) {
-    // Switching to Auto while already watching is fine — keep watcher.
+  if (!session || !isLoggedIn(session)) {
+    return { ok: false, autoMode: false, error: "Sign in first" };
   }
-  if (!next && watcher) {
-    // Turning Auto off does not force-pause; user still has manual control.
+  const turningOn = !session.autoMode;
+  if (turningOn && session.plan !== "PRO") {
+    session = pushActivity(session, {
+      type: "info",
+      message: "Auto mode is Pro — upgrade at splitmeta.net/account",
+    });
+    saveSession(session);
+    broadcastState();
+    return {
+      ok: false,
+      autoMode: false,
+      needsPro: true,
+      error: "Auto mode is a Pro feature",
+    };
   }
-  return setAutoMode(next);
+  const autoMode = setAutoMode(turningOn);
+  return { ok: true, autoMode };
 });
 
 ipcMain.handle("refresh-session", async () => {

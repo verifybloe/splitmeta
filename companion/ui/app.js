@@ -321,11 +321,20 @@ function renderDashboard(session) {
           <p class="muted small" style="margin-top:10px">${statusHint}</p>
           <div class="toolbar">
             <button class="btn btn-primary" id="toggle-watcher">${watching ? "Pause" : "Start watching"}</button>
-            <button class="btn ${autoMode ? "btn-auto-on" : "btn-secondary"}" id="toggle-auto" title="Start when iRacing is detected, pause after upload">
-              ${autoMode ? "Auto on" : "Auto"}
+            <button
+              class="btn ${autoMode ? "btn-auto-on" : "btn-secondary"} ${session.plan !== "PRO" ? "btn-locked" : ""}"
+              id="toggle-auto"
+              title="${session.plan === "PRO" ? "Start when iRacing is detected, pause after upload" : "Auto mode is Pro — click to upgrade"}"
+            >
+              ${autoMode ? "Auto on" : session.plan === "PRO" ? "Auto" : "Auto · Pro"}
             </button>
             <button class="btn btn-secondary" id="upload-latest">Upload latest race</button>
           </div>
+          ${
+            session.plan !== "PRO"
+              ? `<p class="muted small" style="margin-top:10px">Free: Start watching / Upload latest. <strong style="color:#fca5a5">Auto</strong> unlocks on Pro.</p>`
+              : ""
+          }
         </div>
 
         <div class="card">
@@ -369,7 +378,14 @@ function renderDashboard(session) {
   });
 
   document.getElementById("toggle-auto").addEventListener("click", async () => {
-    await window.splitmeta.toggleAutoMode();
+    if (session.plan !== "PRO") {
+      window.splitmeta.openExternal(`${session.siteUrl}/account`);
+      return;
+    }
+    const result = await window.splitmeta.toggleAutoMode();
+    if (result && result.needsPro) {
+      window.splitmeta.openExternal(`${session.siteUrl}/account`);
+    }
   });
 
   document.getElementById("upload-latest").addEventListener("click", async () => {

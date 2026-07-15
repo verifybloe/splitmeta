@@ -18,6 +18,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 | Post-race briefing (rank, pace vs band, deltas) | — | Yes |
 | Recent race history & Your week home | — | Yes |
 | Personal trend charts (finish, lap, iR) | — | Yes |
+| Companion Auto mode (detect session & upload) | — | Yes |
 
 ## MVP checklist
 
