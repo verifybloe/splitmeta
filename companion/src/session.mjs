@@ -26,6 +26,7 @@ export function defaultSession() {
     telemetryDir: DEFAULT_TELEMETRY_DIR,
     uploaded: [],
     activity: [],
+    autoMode: false,
   };
 }
 

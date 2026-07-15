@@ -227,8 +227,24 @@ h1 {
   background: #737373;
 }
 
+.status-auto {
+  background: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.55);
+}
+
 .status-warn {
   background: #f59e0b;
+}
+
+.btn-auto-on {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  border: 1px solid #3b82f6;
+}
+
+.btn-auto-on:hover {
+  background: rgba(59, 130, 246, 0.32);
+  border-color: #60a5fa;
 }
 
 .path {

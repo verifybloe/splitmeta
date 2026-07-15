@@ -36,7 +36,7 @@ function updateBannerHtml() {
   if (s === "ready") {
     action = `<button class="btn btn-primary" id="install-update">Restart &amp; update</button>`;
   } else if (s === "error") {
-    action = `<button class="btn btn-secondary" id="check-update">Try again</button>`;
+    action = `<button class="btn btn-secondary" data-check-update>Try again</button>`;
   }
 
   const progress =
@@ -60,8 +60,10 @@ function bindUpdateActions() {
   document.getElementById("install-update")?.addEventListener("click", async () => {
     await window.splitmeta.installUpdate();
   });
-  document.getElementById("check-update")?.addEventListener("click", async () => {
-    await window.splitmeta.checkForUpdates();
+  document.querySelectorAll("[data-check-update]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      await window.splitmeta.checkForUpdates();
+    });
   });
 }
 
@@ -153,6 +155,7 @@ function renderDashboard(session) {
   }
 
   const watching = session.watching;
+  const autoMode = session.autoMode;
   const telemetryOk = session.telemetryExists;
   const initial = esc((session.name || session.email || "?").slice(0, 1).toUpperCase());
   const planBadge =
@@ -175,6 +178,24 @@ function renderDashboard(session) {
     .join("");
 
   const versionLabel = esc(session.appVersion || updateStatus.currentVersion || "");
+
+  let statusDot = "status-paused";
+  let statusText = "Paused";
+  let statusHint =
+    "Click Start watching before you race, or turn on Auto to detect sessions.";
+  if (autoMode && watching) {
+    statusDot = "status-live";
+    statusText = "Auto · Watching";
+    statusHint = esc(session.autoLabel || "Session detected — uploading when the race finishes.");
+  } else if (autoMode) {
+    statusDot = "status-auto";
+    statusText = "Auto · Standby";
+    statusHint = esc(session.autoLabel || "Waiting for an iRacing session…");
+  } else if (watching) {
+    statusDot = "status-live";
+    statusText = "Watching";
+    statusHint = "New races upload automatically after each session.";
+  }
 
   app.innerHTML = `
     <div class="shell">
@@ -201,16 +222,17 @@ function renderDashboard(session) {
         <div class="card">
           <div class="stat-label">Uploader status</div>
           <div class="stat-value">
-            <span class="status-dot ${watching ? "status-live" : "status-paused"}"></span>
-            ${watching ? "Watching" : "Paused"}
+            <span class="status-dot ${statusDot}"></span>
+            ${statusText}
           </div>
-          <p class="muted small" style="margin-top:10px">
-            ${watching ? "New races upload automatically after each session." : "Click Start watching before you race to enable uploads."}
-          </p>
+          <p class="muted small" style="margin-top:10px">${statusHint}</p>
           <div class="toolbar">
             <button class="btn btn-primary" id="toggle-watcher">${watching ? "Pause" : "Start watching"}</button>
+            <button class="btn ${autoMode ? "btn-auto-on" : "btn-secondary"}" id="toggle-auto" title="Start when iRacing is detected, pause after upload">
+              ${autoMode ? "Auto on" : "Auto"}
+            </button>
             <button class="btn btn-secondary" id="upload-latest">Upload latest race</button>
-            <button class="btn btn-secondary" id="open-meta">Open meta board</button>
+            <button class="btn btn-secondary" data-check-update>Check for updates</button>
           </div>
         </div>
 
@@ -223,7 +245,7 @@ function renderDashboard(session) {
           </p>
           <div class="toolbar">
             <button class="btn btn-secondary" id="pick-folder">Change folder</button>
-            <button class="btn btn-secondary" id="check-update">Check for updates</button>
+            <button class="btn btn-secondary" id="open-meta">Open meta board</button>
           </div>
         </div>
       </div>
@@ -243,6 +265,10 @@ function renderDashboard(session) {
 
   document.getElementById("toggle-watcher").addEventListener("click", async () => {
     await window.splitmeta.toggleWatcher();
+  });
+
+  document.getElementById("toggle-auto").addEventListener("click", async () => {
+    await window.splitmeta.toggleAutoMode();
   });
 
   document.getElementById("upload-latest").addEventListener("click", async () => {

@@ -15,6 +15,7 @@ import {
   defaultSession,
 } from "../src/session.mjs";
 import { createWatcher } from "../src/watcher.mjs";
+import { detectActiveSession } from "../src/sessionDetect.mjs";
 import {
   initAutoUpdater,
   getUpdateStatus,
@@ -25,10 +26,17 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PORT = 38491;
 const DEFAULT_SITE = "https://www.splitmeta.net";
+const AUTO_POLL_MS = 5000;
 
 let mainWindow = null;
 let watcher = null;
 let session = loadSession();
+let autoTimer = null;
+let autoBusy = false;
+let lastAutoState = "";
+/** After an auto upload, stay paused until iRacing exits or a new .ibt appears. */
+let autoArmed = true;
+let lastAutoUploadedFile = null;
 
 function appRoot() {
   return app.getAppPath();
@@ -69,6 +77,8 @@ function publicSession() {
     telemetryDir: session.telemetryDir,
     activity: session.activity ?? [],
     watching: Boolean(watcher),
+    autoMode: Boolean(session.autoMode),
+    autoLabel: lastAutoState,
     telemetryExists: existsSync(session.telemetryDir ?? ""),
     appVersion: app.getVersion(),
   };
@@ -98,9 +108,16 @@ function stopWatcher() {
   watcher = null;
 }
 
-function startWatcher() {
+function stopAutoLoop() {
+  if (autoTimer) {
+    clearInterval(autoTimer);
+    autoTimer = null;
+  }
+}
+
+function startWatcher({ quiet = false } = {}) {
   if (!session || !isLoggedIn(session)) return;
-  stopWatcher();
+  if (watcher) return;
 
   const config = toWatcherConfig(session);
 
@@ -112,6 +129,19 @@ function startWatcher() {
         message: `Uploaded race → ${event.result?.fingerprint ?? "ok"}`,
       });
       saveSession(session);
+
+      // Auto mode: job done → pause until next session/file.
+      if (session.autoMode) {
+        stopWatcher();
+        autoArmed = false;
+        lastAutoUploadedFile = event.filePath ?? lastAutoUploadedFile;
+        lastAutoState = "Upload done — waiting for next session";
+        session = pushActivity(session, {
+          type: "info",
+          message: "Auto: paused after upload",
+        });
+        saveSession(session);
+      }
     } else if (event.type === "skip") {
       session = pushActivity(session, {
         type: "skip",
@@ -134,12 +164,90 @@ function startWatcher() {
     broadcastState();
   });
 
-  session = pushActivity(session, {
-    type: "info",
-    message: "Watching telemetry folder",
-  });
-  saveSession(session);
+  if (!quiet) {
+    session = pushActivity(session, {
+      type: "info",
+      message: session.autoMode
+        ? "Auto: watching this session"
+        : "Watching telemetry folder",
+    });
+    saveSession(session);
+  }
   broadcastState();
+}
+
+async function tickAutoMode() {
+  if (!session?.autoMode || !isLoggedIn(session) || autoBusy) return;
+  autoBusy = true;
+  try {
+    const detected = await detectActiveSession(session.telemetryDir);
+
+    if (!autoArmed) {
+      const newFile =
+        detected.latestFile &&
+        detected.latestFile !== lastAutoUploadedFile;
+      if (!detected.iracingRunning || newFile) {
+        autoArmed = true;
+        lastAutoState = "Waiting for iRacing session";
+      } else {
+        lastAutoState = "Upload done — waiting for next session";
+        broadcastState();
+        return;
+      }
+    }
+
+    if (detected.inSession) {
+      lastAutoState = detected.iracingRunning
+        ? "iRacing detected — watching"
+        : "Telemetry activity — watching";
+      if (!watcher) {
+        startWatcher({ quiet: false });
+      } else {
+        broadcastState();
+      }
+    } else {
+      lastAutoState = "Waiting for iRacing session";
+      broadcastState();
+    }
+  } finally {
+    autoBusy = false;
+  }
+}
+
+function startAutoLoop() {
+  stopAutoLoop();
+  if (!session?.autoMode) return;
+  autoArmed = true;
+  lastAutoState = "Waiting for iRacing session";
+  void tickAutoMode();
+  autoTimer = setInterval(() => {
+    void tickAutoMode();
+  }, AUTO_POLL_MS);
+  broadcastState();
+}
+
+function setAutoMode(enabled) {
+  if (!session) return false;
+  session.autoMode = Boolean(enabled);
+  if (session.autoMode) {
+    session = pushActivity(session, {
+      type: "info",
+      message: "Auto mode on — will start when a session is detected",
+    });
+    saveSession(session);
+    startAutoLoop();
+  } else {
+    stopAutoLoop();
+    lastAutoState = "";
+    autoArmed = true;
+    session = pushActivity(session, {
+      type: "info",
+      message: "Auto mode off",
+    });
+    saveSession(session);
+    broadcastState();
+  }
+  return session.autoMode;
 }
 
 function waitForAuthCallback(expectedState) {
@@ -172,6 +280,7 @@ function waitForAuthCallback(expectedState) {
           telemetryDir: session?.telemetryDir ?? defaultSession().telemetryDir,
           uploaded: session?.uploaded ?? [],
           activity: [],
+          autoMode: session?.autoMode ?? false,
         };
 
         if (!isLoggedIn(next)) {
@@ -187,6 +296,7 @@ function waitForAuthCallback(expectedState) {
           message: `Signed in as ${next.email}`,
         });
         saveSession(session);
+        if (session.autoMode) startAutoLoop();
 
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(
@@ -217,6 +327,7 @@ async function finishLoginFromCredentials(creds) {
     telemetryDir: session?.telemetryDir ?? defaultSession().telemetryDir,
     uploaded: session?.uploaded ?? [],
     activity: [],
+    autoMode: session?.autoMode ?? false,
   };
 
   if (!isLoggedIn(next)) {
@@ -229,6 +340,7 @@ async function finishLoginFromCredentials(creds) {
   });
   saveSession(session);
   await validateSession();
+  if (session.autoMode) startAutoLoop();
   broadcastState();
   return publicSession();
 }
@@ -285,7 +397,9 @@ async function signOut() {
       // ignore network errors on sign out
     }
   }
+  stopAutoLoop();
   stopWatcher();
+  lastAutoState = "";
   clearSession();
   session = null;
   broadcastState();
@@ -354,6 +468,8 @@ app.whenReady().then(async () => {
     if (!ok) {
       clearSession();
       session = null;
+    } else if (session.autoMode) {
+      startAutoLoop();
     }
   }
 
@@ -361,6 +477,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
+  stopAutoLoop();
   stopWatcher();
   if (process.platform !== "darwin") app.quit();
 });
@@ -479,13 +596,31 @@ ipcMain.handle("upload-latest", async () => {
 ipcMain.handle("toggle-watcher", async () => {
   if (watcher) {
     stopWatcher();
-    session = pushActivity(session, { type: "info", message: "Watcher paused" });
-    saveSession(session);
+    if (session?.autoMode) {
+      setAutoMode(false);
+    } else {
+      session = pushActivity(session, { type: "info", message: "Watcher paused" });
+      saveSession(session);
+      broadcastState();
+    }
   } else {
+    // Manual start — leave Auto as-is but run watcher now.
     startWatcher();
   }
   broadcastState();
   return Boolean(watcher);
+});
+
+ipcMain.handle("toggle-auto-mode", async () => {
+  if (!session || !isLoggedIn(session)) return false;
+  const next = !session.autoMode;
+  if (next && watcher) {
+    // Switching to Auto while already watching is fine — keep watcher.
+  }
+  if (!next && watcher) {
+    // Turning Auto off does not force-pause; user still has manual control.
+  }
+  return setAutoMode(next);
 });
 
 ipcMain.handle("refresh-session", async () => {
