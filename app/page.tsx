@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { MOCK_WEEKLY_META, formatPaceDelta } from "@/lib/mockMeta";
+import { SiteHeader } from "@/components/SiteHeader";
+import { BillingButton } from "@/components/BillingButton";
 
 export default function Home() {
   const meta = MOCK_WEEKLY_META;
@@ -7,27 +9,8 @@ export default function Home() {
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
-      {/* Nav */}
-      <header className="border-b border-neutral-800">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <span className="text-lg font-bold tracking-tight">
-            Split<span className="text-red-500">Meta</span>
-          </span>
-          <nav className="flex items-center gap-6 text-sm text-neutral-400">
-            <Link href="/meta" className="hover:text-white">
-              Meta board
-            </Link>
-            <a
-              href="#pricing"
-              className="rounded-md bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-500"
-            >
-              Go Pro — $8/mo
-            </a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
-      {/* Hero */}
       <section className="mx-auto max-w-5xl px-6 pb-16 pt-20 text-center">
         <p className="mb-4 text-sm font-medium uppercase tracking-widest text-red-500">
           For iRacing drivers
@@ -57,7 +40,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Weekly top 3 teaser */}
       <section className="mx-auto max-w-5xl px-6 pb-20">
         <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
@@ -103,8 +85,8 @@ export default function Home() {
             ))}
           </div>
           <p className="mt-4 text-sm text-neutral-500">
-            Full rankings, setup parameter deltas, and one-click install are
-            Pro features.{" "}
+            Full rankings, setup parameter deltas, and one-click install are Pro
+            features.{" "}
             <Link href="/meta" className="text-red-400 hover:underline">
               Open the meta board →
             </Link>
@@ -112,7 +94,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works */}
       <section id="how" className="border-t border-neutral-800 bg-neutral-900">
         <div className="mx-auto max-w-5xl px-6 py-16">
           <h2 className="mb-10 text-center text-2xl font-bold">How it works</h2>
@@ -146,7 +127,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing */}
       <section id="pricing" className="border-t border-neutral-800">
         <div className="mx-auto max-w-5xl px-6 py-16">
           <h2 className="mb-10 text-center text-2xl font-bold">Pricing</h2>
@@ -162,7 +142,10 @@ export default function Home() {
             <div className="rounded-xl border border-red-600 bg-neutral-900 p-6">
               <h3 className="text-lg font-semibold text-red-400">Pro</h3>
               <p className="mt-1 text-3xl font-bold">
-                $8<span className="text-base font-normal text-neutral-400">/mo</span>
+                $8
+                <span className="text-base font-normal text-neutral-400">
+                  /mo
+                </span>
               </p>
               <ul className="mt-4 space-y-2 text-sm text-neutral-300">
                 <li>Full ranked meta board for your band</li>
@@ -170,6 +153,12 @@ export default function Home() {
                 <li>One-click setup install</li>
                 <li>Personal history &amp; trends</li>
               </ul>
+              <div className="mt-6">
+                <BillingButton
+                  label="Get Pro"
+                  className="w-full rounded-md bg-red-600 px-4 py-2.5 font-semibold text-white hover:bg-red-500"
+                />
+              </div>
             </div>
           </div>
         </div>
