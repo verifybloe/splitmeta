@@ -133,7 +133,7 @@ export default async function Home() {
                   ))}
                 </div>
                 <p className="mt-4 text-sm text-neutral-500">
-                  Full rankings, setup parameter deltas, and one-click install are
+                  Full rankings, setup parameter deltas, and post-race briefing are
                   Pro features.{" "}
                   <Link href="/meta" className="text-red-400 hover:underline">
                     Open the meta board →
@@ -181,7 +181,7 @@ export default async function Home() {
                   {
                     step: "3",
                     title: "Run the meta",
-                    body: "Open your band's board, see what's winning and why, and install the setup in one click. Built for your split, not for aliens.",
+                    body: "Open your band's board, see what's winning and why, and copy the winning deltas into your garage. Built for your split, not for aliens.",
                   },
                 ].map((item) => (
                   <div key={item.step}>
@@ -284,6 +284,7 @@ export default async function Home() {
                   <ul className="mt-4 space-y-2 text-sm text-neutral-300">
                     <li>Full ranked meta board for your band</li>
                     <li>Setup parameter deltas</li>
+                    <li>View / download full parameter sheets</li>
                     <li>Post-race briefing in the app</li>
                     <li>Personal history &amp; your-week home</li>
                   </ul>

@@ -224,6 +224,7 @@ export async function computeSeriesWeekMeta(seriesWeekId: string) {
       bandLabel:
         RATING_BANDS.find((b) => b.id === band)?.label ?? band,
       computedAt: new Date().toISOString(),
+      seriesWeekId: seriesWeek.id,
       entries,
     };
 
@@ -308,7 +309,13 @@ export async function getLatestMetaBoard(
     if (latest) {
       const meta = JSON.parse(latest.payload) as WeeklyMetaView;
       if (meta.entries && Array.isArray(meta.entries)) {
-        return { meta, source: "live" };
+        return {
+          meta: {
+            ...meta,
+            seriesWeekId: meta.seriesWeekId ?? latest.seriesWeekId,
+          },
+          source: "live",
+        };
       }
     }
   } catch {

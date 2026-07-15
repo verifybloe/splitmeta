@@ -10,6 +10,7 @@ import {
   sampleDepthFromMeta,
 } from "@/lib/metaCompute";
 import { BillingButton } from "@/components/BillingButton";
+import { MetaSetupDetails } from "@/components/MetaSetupDetails";
 
 export const metadata = {
   title: "Meta board — SplitMeta",
@@ -184,20 +185,29 @@ export default async function MetaBoard({ searchParams }: Props) {
                   </div>
 
                   {!locked && (
-                    <ul className="mt-4 flex flex-wrap gap-2">
-                      {entry.keyDeltas.map((delta) => (
-                        <li
-                          key={delta}
-                          className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300"
-                        >
-                          {delta}
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <ul className="mt-4 flex flex-wrap gap-2">
+                        {entry.keyDeltas.map((delta) => (
+                          <li
+                            key={delta}
+                            className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300"
+                          >
+                            {delta}
+                          </li>
+                        ))}
+                      </ul>
+                      {isPro && meta.seriesWeekId ? (
+                        <MetaSetupDetails
+                          seriesWeekId={meta.seriesWeekId}
+                          fingerprint={entry.fingerprint}
+                          setupLabel={entry.setupLabel}
+                        />
+                      ) : null}
+                    </>
                   )}
                   {locked && (
                     <p className="mt-4 text-sm text-neutral-500">
-                      Parameter deltas and one-click install available on Pro.
+                      Parameter sheets and deltas available on Pro.
                     </p>
                   )}
                 </div>
@@ -212,8 +222,8 @@ export default async function MetaBoard({ searchParams }: Props) {
               Unlock the full board for your band — $8/mo
             </p>
             <p className="mt-1 text-sm text-neutral-400">
-              Full rankings, parameter deltas, one-click install, and your
-              personal trends.
+              Full rankings, parameter sheets (view / download), post-race
+              briefing, and your recent race history.
             </p>
             <div className="mt-4 flex justify-center gap-3">
               {session?.user ? (

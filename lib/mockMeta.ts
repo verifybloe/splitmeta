@@ -22,6 +22,8 @@ export type WeeklyMetaView = {
   band: string;
   bandLabel: string;
   computedAt: string;
+  /** Present on live boards — used for Pro setup detail lookups. */
+  seriesWeekId?: string;
   entries: MetaEntry[];
 };
 

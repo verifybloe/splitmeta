@@ -565,6 +565,17 @@ ipcMain.handle("upload-latest", async () => {
         broadcastState();
         return { ok: true, briefing: session.latestBriefing ?? null };
       }
+      if (outcome?.deferred || outcome?.defer) {
+        broadcastState();
+        return {
+          ok: true,
+          pending: true,
+          message:
+            outcome.reason ??
+            outcome.message ??
+            "Waiting for iRacing to release the telemetry file…",
+        };
+      }
       return {
         ok: false,
         error: outcome?.reason ?? outcome?.message ?? "Upload failed",
@@ -584,7 +595,13 @@ ipcMain.handle("upload-latest", async () => {
     saveSession(session);
     broadcastState();
 
-    const outcome = await processIbtFile(config, latest);
+    const outcome = await processIbtFile(config, latest, {
+      onProgress: (message) => {
+        session = pushActivity(session, { type: "info", message });
+        saveSession(session);
+        broadcastState();
+      },
+    });
     if (outcome.uploaded) {
       session = applyWatcherState(session, config);
       if (outcome.result?.briefing) {
@@ -609,15 +626,28 @@ ipcMain.handle("upload-latest", async () => {
       return { ok: true };
     }
     session = pushActivity(session, {
-      type: "skip",
+      type: outcome.defer ? "info" : "skip",
       message: outcome.reason ?? "Skipped",
     });
     saveSession(session);
     broadcastState();
-    return { ok: false, error: outcome.reason ?? "Upload skipped" };
+    return {
+      ok: Boolean(outcome.defer),
+      pending: Boolean(outcome.defer),
+      error: outcome.defer ? undefined : outcome.reason ?? "Upload skipped",
+      message: outcome.reason,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Upload failed";
-    session = pushActivity(session, { type: "error", message });
+    const busy =
+      err?.code === "EBUSY" ||
+      /EBUSY|resource busy|locked/i.test(message);
+    session = pushActivity(session, {
+      type: busy ? "info" : "error",
+      message: busy
+        ? "Telemetry locked by iRacing — leave results and try Upload again."
+        : message,
+    });
     saveSession(session);
     broadcastState();
     return { ok: false, error: message };

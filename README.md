@@ -13,8 +13,9 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 | Weekly top-3 teaser per series | Yes | Yes |
 | Full ranked meta board for your rating band | — | Yes |
 | Setup parameter deltas | — | Yes |
-| One-click setup download/install | — | Yes |
-| Personal history & trend tracking | — | Yes |
+| Setup parameter sheet (view / download) | — | Yes |
+| Post-race briefing (rank, pace vs band, deltas) | — | Yes |
+| Recent race history & Your week home | — | Yes |
 
 ## MVP checklist
 
