@@ -25,6 +25,11 @@ export function PostRaceBriefingCard({
         {briefing.headline}
       </p>
       <p className="mt-1 text-sm text-neutral-400">{briefing.summary}</p>
+      {briefing.pro && briefing.action ? (
+        <p className="mt-3 rounded-lg border border-red-600/25 bg-red-950/30 px-3 py-2 text-sm text-neutral-100">
+          {briefing.action}
+        </p>
+      ) : null}
 
       {briefing.pro && briefing.rank != null ? (
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">

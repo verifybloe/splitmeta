@@ -208,6 +208,11 @@ function briefingHtml(briefing) {
       </div>
       <p class="briefing-headline">${esc(briefing.headline)}</p>
       <p class="muted small" style="margin-top:6px">${esc(briefing.summary || "")}</p>
+      ${
+        briefing.action
+          ? `<p class="briefing-action">${esc(briefing.action)}</p>`
+          : ""
+      }
       <div class="briefing-stats">
         <div>
           <div class="stat-label">Rank</div>

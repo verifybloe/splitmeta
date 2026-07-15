@@ -682,6 +682,8 @@ export type PostRaceBriefing = {
   verdict: "leading" | "competitive" | "outlier" | "thin" | "unranked";
   headline: string;
   summary: string;
+  /** Clear next step: keep setup vs consider copying meta */
+  action: string;
 };
 
 export async function buildPostRaceBriefing(input: {
@@ -721,6 +723,7 @@ export async function buildPostRaceBriefing(input: {
       headline: "Race uploaded",
       summary:
         "Upgrade to Pro for a post-race briefing: your setup’s meta rank, pace vs band, and key deltas.",
+      action: "Unlock Pro for rank, pace vs band, and a keep-or-copy call.",
     };
   }
 
@@ -741,6 +744,7 @@ export async function buildPostRaceBriefing(input: {
       headline: "Race uploaded — meta still computing",
       summary:
         "Your result is in. Rankings for this band will appear once more data lands.",
+      action: "Keep your current setup until this band’s meta ranks.",
     };
   }
 
@@ -750,6 +754,7 @@ export async function buildPostRaceBriefing(input: {
       e.fingerprint === input.fingerprintShort ||
       e.fingerprint.startsWith(input.fingerprintShort),
   );
+  const leader = meta.entries[0] ?? null;
 
   const shared = {
     ...base,
@@ -762,11 +767,16 @@ export async function buildPostRaceBriefing(input: {
   };
 
   if (!entry) {
+    const leaderHint =
+      leader?.keyDeltas?.length
+        ? ` #1 in band highlights: ${leader.keyDeltas.slice(0, 2).join("; ")}.`
+        : "";
     return {
       ...shared,
       verdict: "unranked",
       headline: "Race uploaded",
       summary: `P${input.finishPos} of ${input.fieldSize} saved. This setup isn’t ranked in ${shared.bandLabel} yet.`,
+      action: `Open the meta board and compare to #1.${leaderHint}`,
     };
   }
 
@@ -791,6 +801,26 @@ export async function buildPostRaceBriefing(input: {
           ? "Early data — treat the rank as provisional."
           : "Competitive setup for this band.";
 
+  const leaderDeltas =
+    leader && entry.rank > 1 && leader.keyDeltas?.length
+      ? leader.keyDeltas.slice(0, 2).join("; ")
+      : "";
+
+  const action =
+    verdict === "leading"
+      ? "Keep this setup — you’re on leading meta for the band."
+      : verdict === "outlier"
+        ? leaderDeltas
+          ? `Consider copying #1 from the meta board (${leaderDeltas}).`
+          : "Consider copying #1 from the meta board — your setup is an outlier."
+        : verdict === "thin"
+          ? "Don’t force a copy yet — sample is thin. Race again, then re-check."
+          : entry.rank === 1
+            ? "Keep it — you’re #1 in this band."
+            : leaderDeltas
+              ? `Solid keep, or peek at #1 (${leaderDeltas}) if pace is off.`
+              : "Solid keep — open the board only if pace feels off.";
+
   return {
     ...shared,
     rank: entry.rank,
@@ -802,6 +832,7 @@ export async function buildPostRaceBriefing(input: {
     verdict,
     headline: `Your setup is #${entry.rank} of ${meta.entries.length} in ${shared.bandLabel}`,
     summary: `P${input.finishPos}/${input.fieldSize} · ${paceText} · ${verdictLine}`,
+    action,
   };
 }
 
