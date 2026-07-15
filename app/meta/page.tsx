@@ -25,7 +25,9 @@ export default async function MetaBoard({ searchParams }: Props) {
   const preferredBand =
     band && RATING_BANDS.some((b) => b.id === band) ? band : undefined;
 
+  // Never show mock filler on the real board — only live DB rankings.
   const { meta, source } = await getLatestMetaBoard(preferredBand);
+  const hasLive = source === "live" && meta.entries.length > 0;
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -34,19 +36,21 @@ export default async function MetaBoard({ searchParams }: Props) {
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{meta.series}</h1>
+            <h1 className="text-2xl font-bold">
+              {hasLive ? meta.series : "Meta board"}
+            </h1>
             <p className="mt-1 text-neutral-400">
-              {meta.car} · {meta.track} · {meta.seasonLabel}, Week {meta.weekNum}
+              {hasLive
+                ? `${meta.car} · ${meta.track} · ${meta.seasonLabel}, Week ${meta.weekNum}`
+                : "Live rankings from crowd-sourced race uploads"}
             </p>
           </div>
           <span className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-400">
-            {source === "live"
+            {hasLive
               ? isPro
                 ? "Live meta · Pro unlocked"
                 : "Live meta · free top 3"
-              : isPro
-                ? "Preview mock · Pro unlocked"
-                : "Preview mock — free top 3"}
+              : "Waiting for race data"}
           </span>
         </div>
 
@@ -69,10 +73,34 @@ export default async function MetaBoard({ searchParams }: Props) {
           })}
         </div>
 
-        {meta.entries.length === 0 ? (
-          <p className="mt-10 text-neutral-400">
-            No races uploaded for this band yet. Ingest a session, then refresh.
-          </p>
+        {!hasLive ? (
+          <div className="mt-10 rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center">
+            <p className="text-lg font-semibold">No live meta for this band yet</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-neutral-400">
+              Rankings appear after drivers upload races with the SplitMeta app.
+              Race with the companion watching, then refresh this page.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link
+                href={
+                  session?.user
+                    ? "/download"
+                    : "/login?callbackUrl=/download"
+                }
+                className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+              >
+                {session?.user ? "Download app" : "Sign in to upload"}
+              </Link>
+              {session?.user && (
+                <Link
+                  href="/account"
+                  className="rounded-md border border-neutral-700 px-4 py-2 font-medium text-neutral-300 hover:border-neutral-500"
+                >
+                  View my uploads
+                </Link>
+              )}
+            </div>
+          </div>
         ) : (
           <div className="mt-8 space-y-4">
             {meta.entries.map((entry) => {
@@ -150,7 +178,7 @@ export default async function MetaBoard({ searchParams }: Props) {
           </div>
         )}
 
-        {!isPro && (
+        {!isPro && hasLive && (
           <div className="mt-10 rounded-xl border border-red-600/40 bg-red-600/10 p-6 text-center">
             <p className="font-semibold">
               Unlock the full board for your band — $8/mo

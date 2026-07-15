@@ -12,8 +12,14 @@ export default async function Home() {
   const downloadHref = session?.user
     ? "/download"
     : "/login?callbackUrl=/download";
-  const { meta, source } = await getLatestMetaBoard();
+  // Marketing preview only when logged out and no live DB rankings yet.
+  const { meta, source } = await getLatestMetaBoard(undefined, {
+    allowMock: !session?.user,
+  });
+  const isLive = source === "live";
+  const isPreview = source === "mock";
   const topThree = meta.entries.slice(0, 3);
+  const showBoard = topThree.length > 0;
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -56,55 +62,80 @@ export default async function Home() {
 
       <section className="mx-auto max-w-5xl px-6 pb-20">
         <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold">
-              This week&apos;s top 3 — {source === "live" ? "live" : "preview"}
-            </h2>
-            <span className="text-sm text-neutral-500">
-              {meta.series} · Week {meta.weekNum} · {meta.bandLabel}
-            </span>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {topThree.map((entry) => (
-              <div
-                key={entry.fingerprint}
-                className="rounded-lg border border-neutral-800 bg-neutral-950 p-4"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-2xl font-bold text-red-500">
-                    #{entry.rank}
-                  </span>
-                  <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">
-                    score {entry.score}
-                  </span>
-                </div>
-                <p className="font-medium">{entry.setupLabel}</p>
-                <dl className="mt-3 space-y-1 text-sm text-neutral-400">
-                  <div className="flex justify-between">
-                    <dt>Pace vs band</dt>
-                    <dd className="text-emerald-400">
-                      {formatPaceDelta(entry.paceDeltaMs)}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Top-5 rate</dt>
-                    <dd>{Math.round(entry.topFiveRate * 100)}%</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Races sampled</dt>
-                    <dd>{entry.sampleRaces}</dd>
-                  </div>
-                </dl>
+          {showBoard ? (
+            <>
+              <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-lg font-semibold">
+                  This week&apos;s top 3 —{" "}
+                  {isLive ? "live" : "example preview"}
+                </h2>
+                <span className="text-sm text-neutral-500">
+                  {meta.series} · Week {meta.weekNum} · {meta.bandLabel}
+                </span>
               </div>
-            ))}
-          </div>
-          <p className="mt-4 text-sm text-neutral-500">
-            Full rankings, setup parameter deltas, and one-click install are Pro
-            features.{" "}
-            <Link href="/meta" className="text-red-400 hover:underline">
-              Open the meta board →
-            </Link>
-          </p>
+              {isPreview && (
+                <p className="mb-4 rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-500">
+                  Example data for the landing page. Sign in and upload races to
+                  see live rankings for your band.
+                </p>
+              )}
+              <div className="grid gap-4 sm:grid-cols-3">
+                {topThree.map((entry) => (
+                  <div
+                    key={entry.fingerprint}
+                    className="rounded-lg border border-neutral-800 bg-neutral-950 p-4"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-2xl font-bold text-red-500">
+                        #{entry.rank}
+                      </span>
+                      <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">
+                        score {entry.score}
+                      </span>
+                    </div>
+                    <p className="font-medium">{entry.setupLabel}</p>
+                    <dl className="mt-3 space-y-1 text-sm text-neutral-400">
+                      <div className="flex justify-between">
+                        <dt>Pace vs band</dt>
+                        <dd className="text-emerald-400">
+                          {formatPaceDelta(entry.paceDeltaMs)}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>Top-5 rate</dt>
+                        <dd>{Math.round(entry.topFiveRate * 100)}%</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt>Races sampled</dt>
+                        <dd>{entry.sampleRaces}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-sm text-neutral-500">
+                Full rankings, setup parameter deltas, and one-click install are
+                Pro features.{" "}
+                <Link href="/meta" className="text-red-400 hover:underline">
+                  Open the meta board →
+                </Link>
+              </p>
+            </>
+          ) : (
+            <div className="py-6 text-center">
+              <h2 className="text-lg font-semibold">No live meta yet</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-neutral-400">
+                Upload races with the SplitMeta app and rankings will show up
+                here from real driver data — not demos.
+              </p>
+              <Link
+                href={downloadHref}
+                className="mt-5 inline-block rounded-md bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+              >
+                Get the app
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

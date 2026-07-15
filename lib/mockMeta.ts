@@ -1,5 +1,5 @@
-// Mock data shaped like the real WeeklyMeta payload. Used by the landing page
-// and meta board until the ingest API + computation job exist.
+// Shared types + helpers. MOCK data is only used on the public landing page
+// when there is no live WeeklyMeta yet (marketing preview).
 
 export type MetaEntry = {
   rank: number;

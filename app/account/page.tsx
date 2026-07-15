@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { getUserRecentRaces } from "@/lib/metaCompute";
+import { shortFingerprint } from "@/lib/ingest";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 
@@ -8,9 +10,19 @@ export const metadata = {
   title: "Account — SplitMeta",
 };
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   searchParams: Promise<{ checkout?: string }>;
 };
+
+function formatLap(ms: number) {
+  if (!ms || ms <= 0) return "—";
+  const totalSec = ms / 1000;
+  const m = Math.floor(totalSec / 60);
+  const s = (totalSec % 60).toFixed(3).padStart(6, "0");
+  return `${m}:${s}`;
+}
 
 export default async function AccountPage({ searchParams }: Props) {
   const session = await auth();
@@ -20,11 +32,12 @@ export default async function AccountPage({ searchParams }: Props) {
 
   const { checkout } = await searchParams;
   const isPro = session.user.plan === "PRO";
+  const races = await getUserRecentRaces(session.user.id, 15);
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
       <SiteHeader />
-      <div className="mx-auto max-w-lg px-6 py-12">
+      <div className="mx-auto max-w-2xl px-6 py-12">
         <h1 className="text-2xl font-bold">Account</h1>
         <p className="mt-1 text-neutral-400">{session.user.email}</p>
 
@@ -71,6 +84,75 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
         </div>
 
+        <div className="mt-8 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
+          <div className="border-b border-neutral-800 px-6 py-4">
+            <p className="text-sm text-neutral-500">Your race uploads</p>
+            <p className="mt-0.5 font-semibold text-neutral-100">
+              Live from the database — no demo data
+            </p>
+          </div>
+          <div className="px-6 py-4">
+            {races.length === 0 ? (
+              <div className="py-4 text-center">
+                <p className="text-sm text-neutral-400">
+                  No races uploaded yet. Run the SplitMeta app, click Start
+                  watching, and finish a race with telemetry enabled.
+                </p>
+                <Link
+                  href="/download"
+                  className="mt-4 inline-block text-sm font-medium text-red-400 hover:text-red-300"
+                >
+                  Download app →
+                </Link>
+              </div>
+            ) : (
+              <ul className="divide-y divide-neutral-800">
+                {races.map((race) => {
+                  const trackName = race.seriesWeek.track.config
+                    ? `${race.seriesWeek.track.name} — ${race.seriesWeek.track.config}`
+                    : race.seriesWeek.track.name;
+                  const irDelta = race.iratingAfter - race.iratingBefore;
+                  const irLabel =
+                    irDelta === 0
+                      ? "iR ±0"
+                      : `iR ${irDelta > 0 ? "+" : ""}${irDelta}`;
+                  return (
+                    <li key={race.id} className="py-4 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="font-medium">
+                            {race.seriesWeek.series.name}
+                          </p>
+                          <p className="mt-0.5 text-sm text-neutral-400">
+                            {race.setup.car.name} · {trackName}
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-500">
+                            Week {race.seriesWeek.weekNum} ·{" "}
+                            {new Date(race.racedAt).toLocaleString()} · setup{" "}
+                            {shortFingerprint(race.setup.fingerprint)}
+                          </p>
+                        </div>
+                        <div className="text-right text-sm">
+                          <p className="font-semibold">
+                            P{race.finishPos}
+                            <span className="font-normal text-neutral-500">
+                              /{race.fieldSize}
+                            </span>
+                          </p>
+                          <p className="text-neutral-400">
+                            {formatLap(race.bestLapMs)} · {race.incidents}x ·{" "}
+                            {irLabel}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
         <div className="mt-8 overflow-hidden rounded-xl border border-neutral-800 bg-gradient-to-br from-neutral-900 to-neutral-950">
           <div className="border-b border-neutral-800 bg-neutral-900/80 px-6 py-4">
             <p className="text-sm text-neutral-500">Windows companion</p>
@@ -80,7 +162,8 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
           <div className="px-6 py-5">
             <p className="text-sm text-neutral-400">
-              Download <strong className="text-neutral-300">SplitMeta-Setup.exe</strong>,
+              Download{" "}
+              <strong className="text-neutral-300">SplitMeta-Setup.exe</strong>,
               run it once, then open SplitMeta from your Desktop.
             </p>
             <Link

@@ -265,11 +265,35 @@ export async function computeAllWeeklyMeta() {
   return { weeks: weeks.length, bandsUpdated: updated };
 }
 
-export async function getLatestMetaBoard(preferredBand?: string): Promise<{
+function emptyWeeklyMeta(preferredBand?: string): WeeklyMetaView {
+  const band =
+    preferredBand && RATING_BANDS.some((b) => b.id === preferredBand)
+      ? preferredBand
+      : "C_2000_2700";
+  const bandLabel =
+    RATING_BANDS.find((b) => b.id === band)?.label ?? "2000 – 2700 iR";
+
+  return {
+    series: "No race data yet",
+    car: "—",
+    track: "—",
+    seasonLabel: "—",
+    weekNum: 0,
+    band,
+    bandLabel,
+    computedAt: new Date().toISOString(),
+    entries: [],
+  };
+}
+
+export async function getLatestMetaBoard(
+  preferredBand?: string,
+  options?: { allowMock?: boolean },
+): Promise<{
   meta: WeeklyMetaView;
-  source: "live" | "mock";
+  source: "live" | "mock" | "empty";
 }> {
-  const { MOCK_WEEKLY_META } = await import("@/lib/mockMeta");
+  const allowMock = options?.allowMock === true;
 
   try {
     const bandFilter = preferredBand
@@ -281,16 +305,53 @@ export async function getLatestMetaBoard(preferredBand?: string): Promise<{
       orderBy: { computedAt: "desc" },
     });
 
-    if (!latest) {
-      return { meta: MOCK_WEEKLY_META, source: "mock" };
+    if (latest) {
+      const meta = JSON.parse(latest.payload) as WeeklyMetaView;
+      if (meta.entries && Array.isArray(meta.entries)) {
+        return { meta, source: "live" };
+      }
     }
-
-    const meta = JSON.parse(latest.payload) as WeeklyMetaView;
-    if (!meta.entries || !Array.isArray(meta.entries)) {
-      return { meta: MOCK_WEEKLY_META, source: "mock" };
-    }
-    return { meta, source: "live" };
   } catch {
+    // fall through to empty / mock
+  }
+
+  if (allowMock) {
+    const { MOCK_WEEKLY_META } = await import("@/lib/mockMeta");
     return { meta: MOCK_WEEKLY_META, source: "mock" };
   }
+
+  return { meta: emptyWeeklyMeta(preferredBand), source: "empty" };
+}
+
+export async function getUserRecentRaces(userId: string, limit = 10) {
+  return prisma.sessionResult.findMany({
+    where: { userId },
+    orderBy: { racedAt: "desc" },
+    take: limit,
+    select: {
+      id: true,
+      finishPos: true,
+      fieldSize: true,
+      incidents: true,
+      iratingBefore: true,
+      iratingAfter: true,
+      bestLapMs: true,
+      racedAt: true,
+      seriesWeek: {
+        select: {
+          weekNum: true,
+          seasonYear: true,
+          seasonQuarter: true,
+          series: { select: { name: true } },
+          track: { select: { name: true, config: true } },
+        },
+      },
+      setup: {
+        select: {
+          fingerprint: true,
+          car: { select: { name: true } },
+        },
+      },
+    },
+  });
 }
