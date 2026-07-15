@@ -146,11 +146,15 @@ Optional env: `CRON_SECRET` — if set, send `Authorization: Bearer CRON_SECRET`
 
 See [`companion/README.md`](companion/README.md). Quick start:
 
+1. Sign in at `/download` on the site
+2. Download the zip, extract, run `install.bat`, paste your API key
+3. Run `START.bat` before racing
+
+Developers can still run from source:
+
 ```powershell
 cd companion
 npm install
 npm run setup
 npm start
 ```
-
-Requires iRacing telemetry logging (`.ibt` files in `Documents/iRacing/telemetry`).

@@ -19,6 +19,7 @@ node_modules/
 
 # production
 /build
+companion/dist/
 
 # misc
 .DS_Store

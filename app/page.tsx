@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { formatPaceDelta } from "@/lib/mockMeta";
 import { getLatestMetaBoard } from "@/lib/metaCompute";
+import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const session = await auth();
+  const downloadHref = session?.user
+    ? "/download"
+    : "/login?callbackUrl=/download";
   const { meta, source } = await getLatestMetaBoard();
   const topThree = meta.entries.slice(0, 3);
 
@@ -33,6 +38,12 @@ export default async function Home() {
             className="rounded-md bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500"
           >
             See this week&apos;s meta
+          </Link>
+          <Link
+            href={downloadHref}
+            className="rounded-md border border-neutral-700 px-6 py-3 font-semibold text-neutral-300 hover:border-neutral-500"
+          >
+            Download companion
           </Link>
           <a
             href="#how"
@@ -105,7 +116,9 @@ export default async function Home() {
               {
                 step: "1",
                 title: "Race like normal",
-                body: "The companion app watches your iRacing exports. After each race it uploads your setup fingerprint and result — zero clicks.",
+                body: "Download the companion, run it in the background, and race. After each session it uploads your setup fingerprint and result — zero clicks.",
+                link: downloadHref,
+                linkLabel: "Get the companion",
               },
               {
                 step: "2",
@@ -124,8 +137,76 @@ export default async function Home() {
                 </div>
                 <h3 className="mb-2 font-semibold">{item.title}</h3>
                 <p className="text-sm text-neutral-400">{item.body}</p>
+                {"link" in item && item.link && (
+                  <Link
+                    href={item.link}
+                    className="mt-3 inline-block text-sm font-medium text-red-400 hover:text-red-300"
+                  >
+                    {item.linkLabel} →
+                  </Link>
+                )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="download"
+        className="border-t border-neutral-800 bg-neutral-900/50"
+      >
+        <div className="mx-auto max-w-5xl px-6 py-16">
+          <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900">
+            <div className="grid lg:grid-cols-2">
+              <div className="border-b border-neutral-800 p-8 lg:border-b-0 lg:border-r lg:p-10">
+                <p className="text-sm font-medium uppercase tracking-widest text-red-500">
+                  Free for all drivers
+                </p>
+                <h2 className="mt-3 text-3xl font-bold">
+                  Windows companion app
+                </h2>
+                <p className="mt-4 text-neutral-400">
+                  Watches your iRacing telemetry folder and uploads race results
+                  in the background. Sign in with Google to download — same
+                  account as the website.
+                </p>
+                <ul className="mt-6 space-y-2 text-sm text-neutral-300">
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span>
+                    Auto-upload after every race
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span>
+                    One-time setup with install.bat
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span>
+                    Helps build meta for your iRating band
+                  </li>
+                </ul>
+                <Link
+                  href={downloadHref}
+                  className="mt-8 inline-flex rounded-lg bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500"
+                >
+                  {session?.user ? "Download now" : "Sign in to download"}
+                </Link>
+              </div>
+              <div className="flex flex-col justify-center bg-neutral-950 p-8 lg:p-10">
+                <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-5 font-mono text-sm">
+                  <p className="text-neutral-500">// after each race</p>
+                  <p className="mt-2 text-emerald-400">
+                    ✓ Uploaded → GT3 Fixed · Monza · P4 · iR +32
+                  </p>
+                  <p className="mt-1 text-neutral-400">
+                    setup fingerprint: a7f3…c21
+                  </p>
+                  <p className="mt-4 text-neutral-500">// zero clicks</p>
+                </div>
+                <p className="mt-4 text-xs text-neutral-500">
+                  Requires Node.js 18+ and iRacing telemetry logging
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

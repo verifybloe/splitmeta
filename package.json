@@ -7,7 +7,8 @@
     "build": "node scripts/build.mjs",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "package-companion": "node scripts/package-companion.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -29,6 +30,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "archiver": "^7.0.1",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5"

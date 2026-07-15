@@ -11,18 +11,20 @@ Background uploader for iRacing. Watches your telemetry folder and sends race re
 
 ## Setup (one time)
 
+Sign in at [splitmeta.net/download](https://www.splitmeta.net/download), download the zip, extract it, then:
+
 ```powershell
-cd C:\Users\Ayden\Documents\splitmeta\companion
-npm install
-npm run setup
+# Or double-click install.bat in the extracted folder
+install.bat
 ```
 
-Paste your `sm_...` API key when prompted.
+Paste your `sm_...` API key when prompted (from [Account → Generate API key](https://www.splitmeta.net/account)).
 
 ## Run
 
 ```powershell
-npm start
+# Or double-click START.bat
+START.bat
 ```
 
 Leave that window open while you race. After each race, when iRacing writes a new `.ibt` file, the companion uploads automatically.

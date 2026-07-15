@@ -79,6 +79,30 @@ export default async function AccountPage({ searchParams }: Props) {
         </div>
 
         <UploadKeyPanel prefix={dbUser?.uploadApiKeyPrefix ?? null} />
+
+        <div className="mt-8 overflow-hidden rounded-xl border border-neutral-800 bg-gradient-to-br from-neutral-900 to-neutral-950">
+          <div className="border-b border-neutral-800 bg-neutral-900/80 px-6 py-4">
+            <p className="text-sm text-neutral-500">Windows companion</p>
+            <p className="mt-0.5 font-semibold text-neutral-100">
+              Auto-upload race results
+            </p>
+          </div>
+          <div className="px-6 py-5">
+            <p className="text-sm text-neutral-400">
+              Download the uploader, paste your API key once, and forget about
+              it — uploads happen after every race.
+            </p>
+            <Link
+              href="/download"
+              className="mt-4 inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2.5 font-semibold text-white hover:bg-red-500"
+            >
+              Download companion
+              <span aria-hidden className="text-red-200">
+                →
+              </span>
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
   );

@@ -18,6 +18,9 @@ export async function SiteHeader() {
           </Link>
           {session?.user ? (
             <>
+              <Link href="/download" className="hover:text-white">
+                Download
+              </Link>
               <Link href="/account" className="hover:text-white">
                 {isPro ? (
                   <span className="rounded bg-red-600/20 px-2 py-0.5 text-red-400">
@@ -43,6 +46,12 @@ export async function SiteHeader() {
             <>
               <Link href="/login" className="hover:text-white">
                 Sign in
+              </Link>
+              <Link
+                href="/login?callbackUrl=/download"
+                className="hover:text-white"
+              >
+                Download
               </Link>
               <Link
                 href="/login?callbackUrl=/account"
