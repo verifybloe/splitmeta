@@ -27,6 +27,7 @@ export function defaultSession() {
     uploaded: [],
     activity: [],
     autoMode: false,
+    latestBriefing: null,
   };
 }
 

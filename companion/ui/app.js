@@ -28,8 +28,18 @@ function formatTime(iso) {
   }
 }
 
+function friendlyBannerMessage(message) {
+  const raw = String(message ?? "");
+  if (/404|Not Found|releases\.atom|authentication token/i.test(raw)) {
+    return "Auto-update unavailable until releases are public. You're fine on this install.";
+  }
+  const first = raw.split(/\r?\n/).find((line) => line.trim()) ?? raw;
+  return first.replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
 function updateBannerHtml() {
   const s = updateStatus?.status;
+  // Hide quiet idle / "already current" — but always show checking, download, ready, error.
   if (!s || s === "idle" || s === "up-to-date" || s === "dev") return "";
 
   let action = "";
@@ -48,7 +58,7 @@ function updateBannerHtml() {
     <div class="update-banner">
       <div>
         <p class="update-title">App update</p>
-        <p class="muted small">${esc(updateStatus.message || "Checking…")}</p>
+        <p class="muted small update-message">${esc(friendlyBannerMessage(updateStatus.message || "Checking…"))}</p>
         ${progress}
       </div>
       <div class="toolbar" style="margin:0">${action}</div>
@@ -68,6 +78,7 @@ function bindUpdateActions() {
 }
 
 function renderLogin(error, mode = "signin") {
+  currentSession = null;
   app.innerHTML = `
     <div class="shell login-wrap">
       <div class="card card-accent login-card">
@@ -101,7 +112,7 @@ function renderLogin(error, mode = "signin") {
 
         <button class="btn btn-white" id="sign-in-google" style="width:100%">Continue with Google</button>
         ${error ? `<p class="error">${esc(error)}</p>` : ""}
-        ${updateBannerHtml()}
+        <div id="login-update-slot">${updateBannerHtml()}</div>
       </div>
     </div>
   `;
@@ -145,6 +156,87 @@ function renderLogin(error, mode = "signin") {
     }
     renderDashboard(result.session);
   });
+}
+
+function patchUpdateBanner() {
+  const slot = document.getElementById("login-update-slot");
+  if (slot) {
+    slot.innerHTML = updateBannerHtml();
+    bindUpdateActions();
+    return;
+  }
+  const existing = document.querySelector(".update-banner");
+  if (existing && currentSession) {
+    // Re-render dashboard so progress / ready state stay in sync.
+    renderDashboard(currentSession);
+  }
+}
+
+function formatPaceDelta(ms) {
+  if (ms == null || !Number.isFinite(ms)) return "—";
+  const sign = ms <= 0 ? "-" : "+";
+  return `${sign}${(Math.abs(ms) / 1000).toFixed(3)}s`;
+}
+
+function briefingHtml(briefing) {
+  if (!briefing) return "";
+
+  if (!briefing.pro) {
+    return `
+      <div class="briefing-card briefing-free">
+        <div class="briefing-top">
+          <p class="briefing-eyebrow">Post-race briefing</p>
+          <button type="button" class="link-btn footer-link" id="dismiss-briefing">Dismiss</button>
+        </div>
+        <p class="briefing-headline">${esc(briefing.headline || "Race uploaded")}</p>
+        <p class="muted small">${esc(briefing.summary || "")}</p>
+        <button type="button" class="btn btn-primary" id="briefing-upgrade" style="margin-top:12px">Get Pro</button>
+      </div>
+    `;
+  }
+
+  const deltas = (briefing.keyDeltas || [])
+    .map((d) => `<li>${esc(d)}</li>`)
+    .join("");
+  const verdictClass = `verdict-${esc(briefing.verdict || "competitive")}`;
+
+  return `
+    <div class="briefing-card">
+      <div class="briefing-top">
+        <p class="briefing-eyebrow">Pro post-race briefing · <span class="${verdictClass}">${esc(briefing.verdict || "")}</span></p>
+        <button type="button" class="link-btn footer-link" id="dismiss-briefing">Dismiss</button>
+      </div>
+      <p class="briefing-headline">${esc(briefing.headline)}</p>
+      <p class="muted small" style="margin-top:6px">${esc(briefing.summary || "")}</p>
+      <div class="briefing-stats">
+        <div>
+          <div class="stat-label">Rank</div>
+          <div class="briefing-stat">${briefing.rank != null ? `#${esc(briefing.rank)}` : "—"}</div>
+        </div>
+        <div>
+          <div class="stat-label">Pace vs band</div>
+          <div class="briefing-stat pace">${esc(formatPaceDelta(briefing.paceDeltaMs))}</div>
+        </div>
+        <div>
+          <div class="stat-label">Top-5 rate</div>
+          <div class="briefing-stat">${briefing.topFiveRate != null ? `${Math.round(briefing.topFiveRate * 100)}%` : "—"}</div>
+        </div>
+        <div>
+          <div class="stat-label">Sampled</div>
+          <div class="briefing-stat">${esc(briefing.sampleRaces ?? 0)} races</div>
+        </div>
+      </div>
+      ${
+        deltas
+          ? `<ul class="briefing-deltas">${deltas}</ul>`
+          : ""
+      }
+      <p class="muted small" style="margin-top:10px">
+        ${esc(briefing.series || "")}${briefing.weekNum ? ` · Week ${esc(briefing.weekNum)}` : ""}
+        ${briefing.fingerprint ? ` · fp ${esc(briefing.fingerprint)}` : ""}
+      </p>
+    </div>
+  `;
 }
 
 function renderDashboard(session) {
@@ -217,6 +309,7 @@ function renderDashboard(session) {
       </div>
 
       ${updateBannerHtml()}
+      ${briefingHtml(session.latestBriefing)}
 
       <div class="grid grid-2">
         <div class="card">
@@ -232,7 +325,6 @@ function renderDashboard(session) {
               ${autoMode ? "Auto on" : "Auto"}
             </button>
             <button class="btn btn-secondary" id="upload-latest">Upload latest race</button>
-            <button class="btn btn-secondary" data-check-update>Check for updates</button>
           </div>
         </div>
 
@@ -255,13 +347,22 @@ function renderDashboard(session) {
         <ul class="activity">${activity || `<li><span class="muted">No activity yet — complete a race with the watcher running.</span></li>`}</ul>
       </div>
 
-      <div class="toolbar" style="margin-top:20px">
+      <div class="footer-bar">
+        <button type="button" class="link-btn footer-link" data-check-update>Check for updates</button>
         <button class="btn btn-secondary" id="sign-out">Sign out</button>
       </div>
     </div>
   `;
 
   bindUpdateActions();
+
+  document.getElementById("dismiss-briefing")?.addEventListener("click", async () => {
+    await window.splitmeta.dismissBriefing();
+  });
+
+  document.getElementById("briefing-upgrade")?.addEventListener("click", () => {
+    window.splitmeta.openExternal(`${session.siteUrl}/account`);
+  });
 
   document.getElementById("toggle-watcher").addEventListener("click", async () => {
     await window.splitmeta.toggleWatcher();
@@ -292,8 +393,13 @@ function renderDashboard(session) {
   });
 
   document.getElementById("sign-out").addEventListener("click", async () => {
-    await window.splitmeta.signOut();
+    currentSession = null;
     renderLogin();
+    try {
+      await window.splitmeta.signOut();
+    } catch {
+      // stay on login even if sign-out IPC fails
+    }
   });
 }
 
@@ -304,21 +410,33 @@ async function boot() {
   }
 
   window.splitmeta.onSessionUpdated((session) => {
+    if (!session) {
+      renderLogin();
+      return;
+    }
     renderDashboard(session);
   });
 
   window.splitmeta.onUpdateStatus((status) => {
     updateStatus = status || updateStatus;
-    if (currentSession) renderDashboard(currentSession);
-    else if (document.getElementById("email-form") || document.getElementById("sign-in-google")) {
-      // stay on login, but refresh banner
-      const err = document.querySelector(".error")?.textContent || null;
-      renderLogin(err);
+    if (updateStatus.message) {
+      updateStatus = {
+        ...updateStatus,
+        message: friendlyBannerMessage(updateStatus.message),
+      };
+    }
+    if (currentSession) {
+      renderDashboard(currentSession);
+    } else {
+      patchUpdateBanner();
     }
   });
 
   try {
     updateStatus = (await window.splitmeta.getUpdateStatus()) || updateStatus;
+    if (updateStatus.message) {
+      updateStatus.message = friendlyBannerMessage(updateStatus.message);
+    }
     let session = await window.splitmeta.getSession();
     if (!session) {
       session = await window.splitmeta.refreshSession();

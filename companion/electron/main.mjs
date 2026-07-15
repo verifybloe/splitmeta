@@ -79,6 +79,7 @@ function publicSession() {
     watching: Boolean(watcher),
     autoMode: Boolean(session.autoMode),
     autoLabel: lastAutoState,
+    latestBriefing: session.latestBriefing ?? null,
     telemetryExists: existsSync(session.telemetryDir ?? ""),
     appVersion: app.getVersion(),
   };
@@ -124,10 +125,23 @@ function startWatcher({ quiet = false } = {}) {
   watcher = createWatcher(config, (event) => {
     if (event.type === "upload") {
       session = applyWatcherState(session, config);
+      if (event.result?.briefing) {
+        session.latestBriefing = event.result.briefing;
+      }
+      const fp = event.result?.fingerprint ?? "ok";
+      const brief = event.result?.briefing;
       session = pushActivity(session, {
         type: "upload",
-        message: `Uploaded race → ${event.result?.fingerprint ?? "ok"}`,
+        message: brief?.headline
+          ? `Uploaded → ${fp} · ${brief.headline}`
+          : `Uploaded race → ${fp}`,
       });
+      if (brief?.summary) {
+        session = pushActivity(session, {
+          type: "info",
+          message: brief.summary,
+        });
+      }
       saveSession(session);
 
       // Auto mode: job done → pause until next session/file.
@@ -546,7 +560,11 @@ ipcMain.handle("upload-latest", async () => {
   try {
     if (watcher?.uploadLatest) {
       const outcome = await watcher.uploadLatest();
-      if (outcome?.uploaded) return { ok: true };
+      if (outcome?.uploaded) {
+        // handleFile already pushed briefing via onEvent
+        broadcastState();
+        return { ok: true, briefing: session.latestBriefing ?? null };
+      }
       return {
         ok: false,
         error: outcome?.reason ?? outcome?.message ?? "Upload failed",
@@ -569,10 +587,23 @@ ipcMain.handle("upload-latest", async () => {
     const outcome = await processIbtFile(config, latest);
     if (outcome.uploaded) {
       session = applyWatcherState(session, config);
+      if (outcome.result?.briefing) {
+        session.latestBriefing = outcome.result.briefing;
+      }
+      const fp = outcome.result?.fingerprint ?? "ok";
+      const brief = outcome.result?.briefing;
       session = pushActivity(session, {
         type: "upload",
-        message: `Uploaded race → ${outcome.result?.fingerprint ?? "ok"}`,
+        message: brief?.headline
+          ? `Uploaded → ${fp} · ${brief.headline}`
+          : `Uploaded race → ${fp}`,
       });
+      if (brief?.summary) {
+        session = pushActivity(session, {
+          type: "info",
+          message: brief.summary,
+        });
+      }
       saveSession(session);
       broadcastState();
       return { ok: true };
@@ -591,6 +622,14 @@ ipcMain.handle("upload-latest", async () => {
     broadcastState();
     return { ok: false, error: message };
   }
+});
+
+ipcMain.handle("dismiss-briefing", async () => {
+  if (!session) return null;
+  session.latestBriefing = null;
+  saveSession(session);
+  broadcastState();
+  return publicSession();
 });
 
 ipcMain.handle("toggle-watcher", async () => {

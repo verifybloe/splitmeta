@@ -355,3 +355,146 @@ export async function getUserRecentRaces(userId: string, limit = 10) {
     },
   });
 }
+
+export type PostRaceBriefing = {
+  pro: boolean;
+  fingerprint: string;
+  rank: number | null;
+  totalSetups: number;
+  score: number | null;
+  paceDeltaMs: number | null;
+  topFiveRate: number | null;
+  sampleRaces: number;
+  keyDeltas: string[];
+  bandLabel: string;
+  series: string;
+  track: string;
+  weekNum: number;
+  finishPos: number;
+  fieldSize: number;
+  verdict: "leading" | "competitive" | "outlier" | "thin" | "unranked";
+  headline: string;
+  summary: string;
+};
+
+export async function buildPostRaceBriefing(input: {
+  plan: "FREE" | "PRO";
+  seriesWeekId: string;
+  fingerprintShort: string;
+  iratingBefore: number;
+  finishPos: number;
+  fieldSize: number;
+}): Promise<PostRaceBriefing> {
+  const band = iratingToBand(input.iratingBefore);
+  const bandLabel =
+    RATING_BANDS.find((b) => b.id === band)?.label ?? band;
+
+  const base = {
+    fingerprint: input.fingerprintShort,
+    bandLabel,
+    finishPos: input.finishPos,
+    fieldSize: input.fieldSize,
+    series: "",
+    track: "",
+    weekNum: 0,
+    rank: null as number | null,
+    totalSetups: 0,
+    score: null as number | null,
+    paceDeltaMs: null as number | null,
+    topFiveRate: null as number | null,
+    sampleRaces: 0,
+    keyDeltas: [] as string[],
+  };
+
+  if (input.plan !== "PRO") {
+    return {
+      ...base,
+      pro: false,
+      verdict: "unranked",
+      headline: "Race uploaded",
+      summary:
+        "Upgrade to Pro for a post-race briefing: your setup’s meta rank, pace vs band, and key deltas.",
+    };
+  }
+
+  const row = await prisma.weeklyMeta.findUnique({
+    where: {
+      seriesWeekId_band: {
+        seriesWeekId: input.seriesWeekId,
+        band,
+      },
+    },
+  });
+
+  if (!row) {
+    return {
+      ...base,
+      pro: true,
+      verdict: "unranked",
+      headline: "Race uploaded — meta still computing",
+      summary:
+        "Your result is in. Rankings for this band will appear once more data lands.",
+    };
+  }
+
+  const meta = JSON.parse(row.payload) as WeeklyMetaView;
+  const entry = meta.entries.find(
+    (e) =>
+      e.fingerprint === input.fingerprintShort ||
+      e.fingerprint.startsWith(input.fingerprintShort),
+  );
+
+  const shared = {
+    ...base,
+    pro: true as const,
+    series: meta.series,
+    track: meta.track,
+    weekNum: meta.weekNum,
+    bandLabel: meta.bandLabel || bandLabel,
+    totalSetups: meta.entries.length,
+  };
+
+  if (!entry) {
+    return {
+      ...shared,
+      verdict: "unranked",
+      headline: "Race uploaded",
+      summary: `P${input.finishPos} of ${input.fieldSize} saved. This setup isn’t ranked in ${shared.bandLabel} yet.`,
+    };
+  }
+
+  let verdict: PostRaceBriefing["verdict"] = "competitive";
+  if (entry.sampleRaces < 3) verdict = "thin";
+  else if (entry.rank <= 3) verdict = "leading";
+  else if (entry.rank > Math.ceil(meta.entries.length * 0.6))
+    verdict = "outlier";
+
+  const paceSec = (entry.paceDeltaMs / 1000).toFixed(3);
+  const paceText =
+    entry.paceDeltaMs <= 0
+      ? `${paceSec.replace(/^-/, "")}s faster than band median`
+      : `+${paceSec}s vs band median`;
+
+  const verdictLine =
+    verdict === "leading"
+      ? "You’re on a leading meta setup for this band."
+      : verdict === "outlier"
+        ? "This setup is an outlier vs what the band is running."
+        : verdict === "thin"
+          ? "Early data — treat the rank as provisional."
+          : "Competitive setup for this band.";
+
+  return {
+    ...shared,
+    rank: entry.rank,
+    score: entry.score,
+    paceDeltaMs: entry.paceDeltaMs,
+    topFiveRate: entry.topFiveRate,
+    sampleRaces: entry.sampleRaces,
+    keyDeltas: entry.keyDeltas ?? [],
+    verdict,
+    headline: `Your setup is #${entry.rank} of ${meta.entries.length} in ${shared.bandLabel}`,
+    summary: `P${input.finishPos}/${input.fieldSize} · ${paceText} · ${verdictLine}`,
+  };
+}
+

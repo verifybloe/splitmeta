@@ -5,7 +5,7 @@ import {
   fingerprintSetupParams,
   shortFingerprint,
 } from "@/lib/ingest";
-import { computeSeriesWeekMeta } from "@/lib/metaCompute";
+import { computeSeriesWeekMeta, buildPostRaceBriefing } from "@/lib/metaCompute";
 
 export const runtime = "nodejs";
 
@@ -155,6 +155,7 @@ async function authenticate(req: Request) {
     select: {
       id: true,
       email: true,
+      plan: true,
       uploadApiKeyHash: true,
       iracingCustId: true,
       displayName: true,
@@ -316,12 +317,28 @@ export async function POST(req: Request) {
       console.error("Meta recompute after ingest failed:", err);
     }
 
+    const fpShort = shortFingerprint(fingerprint);
+    let briefing = null;
+    try {
+      briefing = await buildPostRaceBriefing({
+        plan: user.plan,
+        seriesWeekId: seriesWeek.id,
+        fingerprintShort: fpShort,
+        iratingBefore: body.iratingBefore,
+        finishPos: body.finishPos,
+        fieldSize: body.fieldSize,
+      });
+    } catch (err) {
+      console.error("Post-race briefing failed:", err);
+    }
+
     return NextResponse.json({
       ok: true,
       sessionResultId: result.id,
       setupId: setup.id,
-      fingerprint: shortFingerprint(fingerprint),
+      fingerprint: fpShort,
       seriesWeekId: seriesWeek.id,
+      briefing,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ingest failed";

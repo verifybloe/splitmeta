@@ -81,7 +81,9 @@ a.button {
 
 .login-card {
   width: min(420px, 100%);
+  max-width: 100%;
   text-align: center;
+  overflow: hidden;
 }
 
 .eyebrow {
@@ -343,6 +345,108 @@ h1 {
   text-decoration: underline;
 }
 
+.footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.footer-link {
+  color: #737373;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  color: #a3a3a3;
+  text-decoration: underline;
+}
+
+.briefing-card {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background:
+    linear-gradient(135deg, rgba(220, 38, 38, 0.12), transparent 55%),
+    rgba(23, 23, 23, 0.95);
+}
+
+.briefing-free {
+  border-color: #404040;
+  background: rgba(23, 23, 23, 0.95);
+}
+
+.briefing-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.briefing-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+}
+
+.briefing-headline {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.briefing-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.briefing-stat {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.briefing-stat.pace {
+  color: #34d399;
+}
+
+.briefing-deltas {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.briefing-deltas li {
+  border-radius: 999px;
+  background: #262626;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: #d4d4d4;
+}
+
+.verdict-leading { color: #34d399; }
+.verdict-competitive { color: #93c5fd; }
+.verdict-outlier { color: #fbbf24; }
+.verdict-thin { color: #a3a3a3; }
+.verdict-unranked { color: #a3a3a3; }
+
+@media (max-width: 720px) {
+  .briefing-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .divider {
   display: flex;
   align-items: center;
@@ -360,11 +464,6 @@ h1 {
   background: #262626;
 }
 
-.login-card {
-  width: min(420px, 100%);
-  text-align: center;
-}
-
 .update-banner {
   display: flex;
   align-items: center;
@@ -375,11 +474,20 @@ h1 {
   border-radius: 12px;
   border: 1px solid rgba(239, 68, 68, 0.35);
   background: rgba(220, 38, 38, 0.08);
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .update-title {
   font-weight: 600;
   margin: 0 0 4px;
+}
+
+.update-message {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-height: 4.5em;
+  overflow: hidden;
 }
 
 .update-progress {
