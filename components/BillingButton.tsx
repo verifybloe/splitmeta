@@ -25,12 +25,21 @@ export function BillingButton({
         window.location.href = `/login?callbackUrl=${encodeURIComponent("/account")}`;
         return;
       }
-      const data = (await res.json()) as { url?: string; error?: string };
+      const text = await res.text();
+      let data: { url?: string; error?: string } = {};
+      try {
+        data = text ? (JSON.parse(text) as { url?: string; error?: string }) : {};
+      } catch {
+        alert(`Billing failed (${res.status}): ${text.slice(0, 200) || "empty response"}`);
+        return;
+      }
       if (!res.ok || !data.url) {
-        alert(data.error ?? "Billing request failed");
+        alert(data.error ?? `Billing request failed (${res.status})`);
         return;
       }
       window.location.href = data.url;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Billing request failed");
     } finally {
       setLoading(false);
     }
