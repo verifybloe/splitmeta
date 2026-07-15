@@ -75,7 +75,11 @@ AUTH_GOOGLE_SECRET
 STRIPE_SECRET_KEY
 STRIPE_PRICE_ID
 STRIPE_WEBHOOK_SECRET
+CRON_SECRET          # required on Vercel; Vercel Cron sends Authorization: Bearer …
+ADMIN_GRANT_SECRET   # optional; protects POST /api/admin/grant-pro
 ```
+
+Never commit real `.env` files — only `.env.example` (placeholders) belongs in git.
 
 Redeploy after saving.
 

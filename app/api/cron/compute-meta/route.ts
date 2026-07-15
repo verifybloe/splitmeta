@@ -6,12 +6,17 @@ export const maxDuration = 60;
 
 function authorized(req: Request) {
   const secret = process.env.CRON_SECRET;
+  const auth = req.headers.get("authorization") ?? "";
+
+  // Production / Vercel must set CRON_SECRET (Vercel Cron sends it automatically).
   if (!secret) {
-    // Allow manual trigger in early MVP when secret isn't set yet.
-    // Lock this down by setting CRON_SECRET in Vercel.
+    if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+      return false;
+    }
+    // Local/dev only: allow unauthenticated triggers when unset.
     return true;
   }
-  const auth = req.headers.get("authorization") ?? "";
+
   return auth === `Bearer ${secret}`;
 }
 

@@ -24,6 +24,9 @@ companion/dist/
 # misc
 .DS_Store
 *.pem
+*.key
+*.p12
+*.pfx
 
 # debug
 npm-debug.log*
@@ -31,8 +34,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env / secrets — never commit real values
+.env
+.env.*
+!.env.example
+.env.grant-pro.local
+
+# local ops / admin helpers (may touch production DB)
+scripts/grant-pro.mjs
+scripts/*.local.*
+
+# companion runtime credentials (user machine only)
+**/session.json
+**/.splitmeta/
 
 # vercel
 .vercel
@@ -45,6 +59,3 @@ next-env.d.ts
 /generated/
 dev.db*
 prisma/dev.db*
-
-.vercel
-.env*

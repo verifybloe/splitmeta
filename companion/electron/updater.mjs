@@ -26,6 +26,16 @@ export function getUpdateStatus() {
   return latestStatus;
 }
 
+function friendlyUpdateError(err) {
+  const raw = err?.message ?? String(err ?? "Update check failed");
+  if (/404|Not Found|releases\.atom|authentication token/i.test(raw)) {
+    return "Auto-update unavailable until releases are public. You're fine on this install.";
+  }
+  // Avoid dumping GitHub HTML/header noise into the UI.
+  const first = raw.split(/\r?\n/).find((line) => line.trim()) ?? raw;
+  return first.replace(/\s+/g, " ").trim().slice(0, 180);
+}
+
 export function initAutoUpdater(win) {
   mainWindow = win;
   setStatus({
@@ -87,14 +97,14 @@ export function initAutoUpdater(win) {
   autoUpdater.on("error", (err) => {
     setStatus({
       status: "error",
-      message: err?.message ?? "Update check failed",
+      message: friendlyUpdateError(err),
     });
   });
 
   void autoUpdater.checkForUpdates().catch((err) => {
     setStatus({
       status: "error",
-      message: err?.message ?? "Update check failed",
+      message: friendlyUpdateError(err),
     });
   });
 }
