@@ -171,7 +171,7 @@ export function YourWeekHero({
                 href="/account"
                 className="inline-block text-sm text-neutral-500 hover:text-neutral-300"
               >
-                Manage watchlist →
+                Manage account →
               </Link>
             </div>
           ) : null}
@@ -287,6 +287,12 @@ export function YourWeekHero({
               className="rounded-md border border-neutral-600 px-7 py-3.5 text-base font-semibold text-neutral-200 hover:border-neutral-400"
             >
               Companion app
+            </Link>
+            <Link
+              href="/account"
+              className="rounded-md border border-neutral-600 px-7 py-3.5 text-base font-semibold text-neutral-200 hover:border-neutral-400"
+            >
+              My account
             </Link>
             {!isPro ? (
               <Link

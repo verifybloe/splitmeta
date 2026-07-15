@@ -29,7 +29,7 @@ function SparkBars({
   const span = Math.max(max - min, 1);
 
   return (
-    <div className="flex h-28 items-end gap-1">
+    <div className="flex h-full min-h-28 items-end gap-1.5">
       {values.map((value, i) => {
         const norm = (value - min) / span;
         const height = invert ? 1 - norm : norm;
@@ -84,7 +84,7 @@ function SparkLine({
     .join(" ");
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-28 w-full" role="img">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" role="img">
       <path
         d={path}
         fill="none"
@@ -125,32 +125,39 @@ export function RaceTrends({
 
   if (!isPro) {
     return (
-      <section className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
-        <h2 className="font-semibold">Personal trends</h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          Finish position, iRating, and pace history across your uploads.
+      <section className="rounded-xl border border-neutral-800 bg-neutral-900/90 p-6 sm:p-8">
+        <p className="text-sm font-medium tracking-wide text-red-500 uppercase">
+          Trends
         </p>
-        <p className="mt-4 text-sm text-neutral-400">
-          Pro unlocks trend charts for your last races.
+        <h2 className="mt-2 text-2xl font-semibold">Your racing history in charts</h2>
+        <p className="mt-2 max-w-xl text-sm text-neutral-400">
+          Finish place, best lap, and iRating across uploads — unlock with Pro.
         </p>
-        <Link
-          href="/account"
-          className="mt-4 inline-block text-sm font-medium text-red-400 hover:underline"
-        >
-          Upgrade to Pro →
-        </Link>
+        <div className="mt-6 h-24 rounded-lg border border-dashed border-neutral-700 bg-neutral-950/50" />
+        <p className="mt-4 text-sm text-neutral-500">
+          Upgrade above to see live charts from your race uploads.
+        </p>
       </section>
     );
   }
 
   if (points.length === 0) {
     return (
-      <section className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
-        <h2 className="font-semibold">Personal trends</h2>
-        <p className="mt-4 text-sm text-neutral-500">
-          Upload a few races with the companion and your finish / iR trends
-          will show up here.
+      <section className="rounded-xl border border-neutral-800 bg-neutral-900/90 p-6 sm:p-8">
+        <p className="text-sm font-medium tracking-wide text-red-500 uppercase">
+          Trends
         </p>
+        <h2 className="mt-2 text-2xl font-semibold">Personal trends</h2>
+        <p className="mt-3 text-sm text-neutral-400">
+          Upload a few races with the companion and your finish / iR trends will
+          show up here.
+        </p>
+        <Link
+          href="/download"
+          className="mt-5 inline-block text-sm font-medium text-red-400 hover:underline"
+        >
+          Get the companion →
+        </Link>
       </section>
     );
   }
@@ -165,54 +172,53 @@ export function RaceTrends({
 
   return (
     <section
-      className={`rounded-xl border border-neutral-800 bg-neutral-900 ${compact ? "p-5" : "p-6"}`}
+      className={`rounded-xl border border-neutral-800 bg-neutral-900/90 ${compact ? "p-5" : "p-6 sm:p-8"}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold">Personal trends</h2>
+          {!compact ? (
+            <p className="text-sm font-medium tracking-wide text-red-500 uppercase">
+              Trends
+            </p>
+          ) : null}
+          <h2 className={`${compact ? "" : "mt-2"} text-xl font-semibold sm:text-2xl`}>
+            Personal trends
+          </h2>
           <p className="mt-1 text-sm text-neutral-500">
             Last {summary.races} upload{summary.races === 1 ? "" : "s"} · oldest
             → newest
           </p>
         </div>
-        {!compact ? (
-          <Link href="/download" className="text-sm text-red-400 hover:underline">
-            Keep uploading →
-          </Link>
-        ) : (
-          <Link href="/account" className="text-sm text-red-400 hover:underline">
-            Full trends →
-          </Link>
-        )}
+        <Link href="/download" className="text-sm text-red-400 hover:underline">
+          Keep uploading →
+        </Link>
       </div>
 
-      <div
-        className={`mt-5 grid gap-3 ${compact ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-4"}`}
-      >
-        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3 sm:px-4 sm:py-4">
           <p className="text-xs text-neutral-500">Top-5 rate</p>
-          <p className="mt-1 text-lg font-semibold text-neutral-100">
+          <p className="mt-1 text-xl font-semibold text-neutral-100 sm:text-2xl">
             {pctLabel(summary.topFiveRate)}
           </p>
         </div>
-        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3">
+        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3 sm:px-4 sm:py-4">
           <p className="text-xs text-neutral-500">Best finish</p>
-          <p className="mt-1 text-lg font-semibold text-neutral-100">
+          <p className="mt-1 text-xl font-semibold text-neutral-100 sm:text-2xl">
             {summary.bestFinish != null ? `P${summary.bestFinish}` : "—"}
           </p>
         </div>
-        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3">
+        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3 sm:px-4 sm:py-4">
           <p className="text-xs text-neutral-500">Avg incidents</p>
-          <p className="mt-1 text-lg font-semibold text-neutral-100">
+          <p className="mt-1 text-xl font-semibold text-neutral-100 sm:text-2xl">
             {summary.avgIncidents != null
               ? summary.avgIncidents.toFixed(1)
               : "—"}
           </p>
         </div>
-        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3">
+        <div className="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-3 sm:px-4 sm:py-4">
           <p className="text-xs text-neutral-500">iR change</p>
           <p
-            className={`mt-1 text-lg font-semibold ${
+            className={`mt-1 text-xl font-semibold sm:text-2xl ${
               (summary.irNet ?? 0) > 0
                 ? "text-emerald-400"
                 : (summary.irNet ?? 0) < 0
@@ -227,47 +233,49 @@ export function RaceTrends({
         </div>
       </div>
 
-      <div
-        className={`mt-6 grid gap-6 ${compact ? "grid-cols-1" : "md:grid-cols-2"}`}
-      >
-        <div>
-          <p className="mb-3 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+      <div className="mt-8 grid gap-8 md:grid-cols-2">
+        <div className="rounded-lg border border-neutral-800/80 bg-neutral-950/40 p-4">
+          <p className="mb-4 text-xs font-medium tracking-wide text-neutral-500 uppercase">
             Finish place
           </p>
-          <SparkBars
-            values={points.map((p) => p.finishPos)}
-            invert
-            titles={finishTitles}
-          />
-          <p className="mt-2 text-xs text-neutral-600">
+          <div className="h-32">
+            <SparkBars
+              values={points.map((p) => p.finishPos)}
+              invert
+              titles={finishTitles}
+            />
+          </div>
+          <p className="mt-3 text-xs text-neutral-600">
             Lower bars = better finishes
           </p>
         </div>
 
-        {!compact ? (
-          <div>
-            <p className="mb-3 text-xs font-medium tracking-wide text-neutral-500 uppercase">
-              Best lap
-            </p>
+        <div className="rounded-lg border border-neutral-800/80 bg-neutral-950/40 p-4">
+          <p className="mb-4 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+            Best lap
+          </p>
+          <div className="h-32">
             <SparkBars
               values={points.map((p) => p.bestLapMs)}
               invert
               titles={lapTitles}
             />
-            <p className="mt-2 text-xs text-neutral-600">
-              Lower bars = faster laps
-            </p>
           </div>
-        ) : null}
+          <p className="mt-3 text-xs text-neutral-600">
+            Lower bars = faster laps
+          </p>
+        </div>
 
-        <div className={compact ? "" : "md:col-span-2"}>
-          <p className="mb-3 text-xs font-medium tracking-wide text-neutral-500 uppercase">
+        <div className="rounded-lg border border-neutral-800/80 bg-neutral-950/40 p-4 md:col-span-2">
+          <p className="mb-4 text-xs font-medium tracking-wide text-neutral-500 uppercase">
             iRating
           </p>
-          <SparkLine
-            values={points.map((p) => p.iratingAfter)}
-            labels={irLabels}
-          />
+          <div className="h-32">
+            <SparkLine
+              values={points.map((p) => p.iratingAfter)}
+              labels={irLabels}
+            />
+          </div>
         </div>
       </div>
     </section>

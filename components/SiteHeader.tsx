@@ -11,8 +11,11 @@ export async function SiteHeader() {
       className="border-b border-neutral-800"
       style={{ viewTransitionName: "site-header" }}
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
+        >
           <img
             src="/favicon-32.png"
             alt=""
@@ -22,7 +25,7 @@ export async function SiteHeader() {
           />
           Split<span className="text-red-500">Meta</span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm text-neutral-400">
+        <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm text-neutral-400">
           <Link href="/meta" className="hover:text-white">
             Meta board
           </Link>
@@ -31,14 +34,16 @@ export async function SiteHeader() {
               <Link href="/download" className="hover:text-white">
                 Download
               </Link>
-              <Link href="/account" className="hover:text-white">
+              <Link
+                href="/account"
+                className="inline-flex items-center gap-2 font-medium text-neutral-200 hover:text-white"
+              >
+                My account
                 {isPro ? (
-                  <span className="rounded bg-red-600/20 px-2 py-0.5 text-red-400">
+                  <span className="rounded bg-red-600/20 px-1.5 py-0.5 text-xs font-semibold text-red-400">
                     Pro
                   </span>
-                ) : (
-                  "Account"
-                )}
+                ) : null}
               </Link>
               {!isPro && <BillingButton />}
               <form
