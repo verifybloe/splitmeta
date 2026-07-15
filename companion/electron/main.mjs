@@ -118,6 +118,12 @@ function startWatcher() {
         message: event.reason ?? "Skipped file",
       });
       saveSession(session);
+    } else if (event.type === "info") {
+      session = pushActivity(session, {
+        type: "info",
+        message: event.message ?? "Working…",
+      });
+      saveSession(session);
     } else if (event.type === "error") {
       session = pushActivity(session, {
         type: "error",
@@ -414,6 +420,60 @@ ipcMain.handle("pick-telemetry-dir", async () => {
   saveSession(session);
   broadcastState();
   return session.telemetryDir;
+});
+
+ipcMain.handle("upload-latest", async () => {
+  if (!session || !isLoggedIn(session)) {
+    return { ok: false, error: "Sign in first" };
+  }
+  try {
+    if (watcher?.uploadLatest) {
+      const outcome = await watcher.uploadLatest();
+      if (outcome?.uploaded) return { ok: true };
+      return {
+        ok: false,
+        error: outcome?.reason ?? outcome?.message ?? "Upload failed",
+      };
+    }
+
+    const { listIbtFiles, processIbtFile } = await import("../src/watcher.mjs");
+    const config = toWatcherConfig(session);
+    const latest = listIbtFiles(config.telemetryDir)[0];
+    if (!latest) {
+      return { ok: false, error: "No .ibt files found" };
+    }
+    session = pushActivity(session, {
+      type: "info",
+      message: "Uploading latest race…",
+    });
+    saveSession(session);
+    broadcastState();
+
+    const outcome = await processIbtFile(config, latest);
+    if (outcome.uploaded) {
+      session = applyWatcherState(session, config);
+      session = pushActivity(session, {
+        type: "upload",
+        message: `Uploaded race → ${outcome.result?.fingerprint ?? "ok"}`,
+      });
+      saveSession(session);
+      broadcastState();
+      return { ok: true };
+    }
+    session = pushActivity(session, {
+      type: "skip",
+      message: outcome.reason ?? "Skipped",
+    });
+    saveSession(session);
+    broadcastState();
+    return { ok: false, error: outcome.reason ?? "Upload skipped" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upload failed";
+    session = pushActivity(session, { type: "error", message });
+    saveSession(session);
+    broadcastState();
+    return { ok: false, error: message };
+  }
 });
 
 ipcMain.handle("toggle-watcher", async () => {

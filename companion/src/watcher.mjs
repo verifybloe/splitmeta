@@ -4,10 +4,10 @@ import { readSessionInfoYaml } from "./ibt.mjs";
 import { parseSessionYaml } from "./sessionParse.mjs";
 import { uploadSession } from "./upload.mjs";
 
-// iRacing often keeps .ibt files locked for a bit after the session ends.
-const STABLE_MS = 8000;
-const RETRY_DELAY_MS = 5000;
-const MAX_RETRIES = 12;
+// Wait for iRacing to finish writing, then for cool-down / finish data.
+const STABLE_MS = 10000;
+const RETRY_DELAY_MS = 8000;
+const MAX_RETRIES = 24; // ~3+ minutes of retries after each change
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,7 +28,7 @@ async function waitForFileReady(filePath) {
   let lastSize = -1;
   let stableCount = 0;
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 30; i++) {
     if (!existsSync(filePath)) {
       await sleep(1000);
       continue;
@@ -37,12 +37,12 @@ async function waitForFileReady(filePath) {
     const size = statSync(filePath).size;
     if (size > 0 && size === lastSize) {
       stableCount += 1;
-      if (stableCount >= 2) return;
+      if (stableCount >= 3) return;
     } else {
       stableCount = 0;
       lastSize = size;
     }
-    await sleep(1500);
+    await sleep(2000);
   }
 }
 
@@ -61,7 +61,7 @@ export async function processIbtFile(config, filePath, { dryRun = false } = {}) 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const yamlText = readSessionInfoYaml(filePath);
-      const payload = parseSessionYaml(yamlText, filePath);
+      const payload = parseSessionYaml(yamlText, filePath, filePath);
 
       if (
         payload.sessionType &&
@@ -73,8 +73,19 @@ export async function processIbtFile(config, filePath, { dryRun = false } = {}) 
         };
       }
 
-      if (payload.finishPos <= 0) {
-        return { skipped: true, reason: "no finish position in telemetry" };
+      // Still racing / cool-down not reached yet — keep waiting.
+      if (payload.waitingForResults || payload.finishPos <= 0) {
+        if (attempt < MAX_RETRIES) {
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+        return {
+          skipped: true,
+          reason:
+            payload.finishPos <= 0
+              ? "no finish position after waiting (leave results screen so telemetry can finalize)"
+              : "race still in progress when retries ran out",
+        };
       }
 
       if (dryRun) {
@@ -99,26 +110,41 @@ export async function processIbtFile(config, filePath, { dryRun = false } = {}) 
 export function createWatcher(config, onEvent) {
   const seen = new Set(config.uploaded ?? []);
   const pending = new Map();
+  const inFlight = new Set();
 
   async function handleFile(filePath) {
     const id = filePath.toLowerCase();
-    if (seen.has(id)) return;
+    if (seen.has(id) || inFlight.has(id)) {
+      return { skipped: true, reason: seen.has(id) ? "already uploaded" : "already processing" };
+    }
+    inFlight.add(id);
 
     try {
+      onEvent?.({
+        type: "info",
+        filePath,
+        message: "Waiting for race results…",
+      });
       const outcome = await processIbtFile(config, filePath);
       if (outcome.skipped) {
         onEvent?.({ type: "skip", filePath, ...outcome });
-        return;
+        if (/no finish position|still in progress|waiting/i.test(outcome.reason ?? "")) {
+          return outcome;
+        }
+        seen.add(id);
+        config.uploaded = [...seen].slice(-500);
+        return outcome;
       }
       seen.add(id);
       config.uploaded = [...seen].slice(-500);
       onEvent?.({ type: "upload", filePath, ...outcome });
+      return outcome;
     } catch (err) {
-      onEvent?.({
-        type: "error",
-        filePath,
-        message: err instanceof Error ? err.message : String(err),
-      });
+      const message = err instanceof Error ? err.message : String(err);
+      onEvent?.({ type: "error", filePath, message });
+      return { error: true, message };
+    } finally {
+      inFlight.delete(id);
     }
   }
 
@@ -134,11 +160,6 @@ export function createWatcher(config, onEvent) {
     );
   }
 
-  function scanExisting() {
-    // Only look at brand-new files via fs.watch after start —
-    // don't auto-process old races when clicking Start watching.
-  }
-
   let watcher;
   try {
     watcher = watch(config.telemetryDir, (_, filename) => {
@@ -152,12 +173,18 @@ export function createWatcher(config, onEvent) {
     });
   }
 
-  scanExisting();
-
   return {
     close() {
       watcher?.close();
       for (const t of pending.values()) clearTimeout(t);
+    },
+    /** Manually upload the newest .ibt (for races the watcher missed). */
+    async uploadLatest() {
+      const latest = listIbtFiles(config.telemetryDir)[0];
+      if (!latest) {
+        return { skipped: true, reason: "No .ibt files found" };
+      }
+      return handleFile(latest);
     },
   };
 }

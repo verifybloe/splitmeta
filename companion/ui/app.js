@@ -209,6 +209,7 @@ function renderDashboard(session) {
           </p>
           <div class="toolbar">
             <button class="btn btn-primary" id="toggle-watcher">${watching ? "Pause" : "Start watching"}</button>
+            <button class="btn btn-secondary" id="upload-latest">Upload latest race</button>
             <button class="btn btn-secondary" id="open-meta">Open meta board</button>
           </div>
         </div>
@@ -242,6 +243,18 @@ function renderDashboard(session) {
 
   document.getElementById("toggle-watcher").addEventListener("click", async () => {
     await window.splitmeta.toggleWatcher();
+  });
+
+  document.getElementById("upload-latest").addEventListener("click", async () => {
+    const btn = document.getElementById("upload-latest");
+    btn.disabled = true;
+    btn.textContent = "Uploading…";
+    const result = await window.splitmeta.uploadLatest();
+    if (!result.ok) {
+      alert(result.error || "Upload failed");
+    }
+    btn.disabled = false;
+    btn.textContent = "Upload latest race";
   });
 
   document.getElementById("pick-folder").addEventListener("click", async () => {

@@ -1,4 +1,5 @@
 import { parseAllDocuments } from "yaml";
+import { readRaceTelemetrySummary } from "./ibt.mjs";
 
 function docsToMap(yamlText) {
   const docs = parseAllDocuments(yamlText);
@@ -51,13 +52,17 @@ function flattenSetup(obj, prefix = "", out = {}) {
   return out;
 }
 
-function parseSeasonQuarter(seasonId) {
-  // iRacing SeasonID encodes year/quarter in places; fallback to calendar quarter.
+function parseSeasonQuarter() {
   const q = Math.ceil((new Date().getMonth() + 1) / 3);
   return { seasonYear: new Date().getFullYear(), seasonQuarter: q };
 }
 
-export function parseSessionYaml(yamlText, fileName = "") {
+function resultsArray(session) {
+  const results = session?.ResultsPositions ?? session?.Results;
+  return Array.isArray(results) ? results : [];
+}
+
+export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
   const map = docsToMap(yamlText);
   const weekend = map.get("WeekendInfo") ?? {};
   const driverInfo = map.get("DriverInfo") ?? {};
@@ -74,39 +79,78 @@ export function parseSessionYaml(yamlText, fileName = "") {
     session?.SubSessionID ??
     (fileName.replace(/\D/g, "") || fileName);
 
-  const results = session?.ResultsPositions ?? session?.Results ?? [];
-  const myResult = Array.isArray(results)
-    ? results.find((r) => r?.CarIdx === driverCarIdx) ??
-      results.find((r) => r?.Position === driver?.FinishPosition)
-    : null;
+  const results = resultsArray(session);
+  const myResult =
+    results.find((r) => r?.CarIdx === driverCarIdx) ??
+    results.find((r) => r?.Position === driver?.FinishPosition) ??
+    null;
 
-  const finishPos =
+  let finishPos = Number(
     myResult?.Position ??
-    driver?.FinishPosition ??
-    session?.SessionResults?.Position ??
-    0;
-  const incidents =
+      myResult?.ClassPosition ??
+      driver?.FinishPosition ??
+      session?.SessionResults?.Position ??
+      0,
+  );
+  let incidents = Number(
     myResult?.Incidents ??
-    driver?.Incidents ??
-    session?.SessionResults?.Incidents ??
-    0;
+      driver?.Incidents ??
+      session?.SessionResults?.Incidents ??
+      0,
+  );
 
-  const bestLapSec =
+  let bestLapSec = Number(
     myResult?.FastestTime ??
-    myResult?.BestLapTime ??
-    driver?.BestLapTime ??
-    session?.SessionResults?.FastestTime ??
-    0;
-  const bestLapMs = Math.round(Number(bestLapSec) * 1000);
+      myResult?.BestLapTime ??
+      driver?.BestLapTime ??
+      session?.SessionResults?.FastestTime ??
+      0,
+  );
 
+  // Race YAML often has empty ResultsPositions — read finish from binary samples.
+  let telemetry = null;
+  let waitingForResults = false;
+  if (filePath) {
+    try {
+      telemetry = readRaceTelemetrySummary(filePath);
+    } catch {
+      telemetry = null;
+    }
+  }
+
+  if (telemetry) {
+    if (telemetry.stillRacing && finishPos <= 0) {
+      waitingForResults = true;
+    }
+    if (finishPos <= 0 && telemetry.finishPos > 0) {
+      finishPos = telemetry.finishPos;
+    }
+    if (!incidents && telemetry.incidents) {
+      incidents = telemetry.incidents;
+    }
+    if (!(bestLapSec > 0) && telemetry.bestLapSec > 0) {
+      bestLapSec = telemetry.bestLapSec;
+    }
+    if (!telemetry.raceComplete && telemetry.stillRacing) {
+      waitingForResults = true;
+    }
+  } else if (
+    String(session?.SessionType ?? "")
+      .toLowerCase()
+      .includes("race") &&
+    results.length === 0 &&
+    finishPos <= 0
+  ) {
+    waitingForResults = true;
+  }
+
+  const bestLapMs = Math.round(Number(bestLapSec) * 1000);
   const avgLapSec = myResult?.AverageLapTime ?? bestLapSec;
   const avgLapMs = Math.round(Number(avgLapSec || bestLapSec) * 1000);
 
   const fieldSize = Array.isArray(driverInfo.Drivers)
-    ? driverInfo.Drivers.filter((d) => d?.UserName).length
-    : Array.isArray(results)
-      ? results.length
-      : 0;
+    ? driverInfo.Drivers.filter((d) => d?.UserName && !d?.IsSpectator).length
+    : results.length || 1;
 
   const iratingBefore = driver?.IRating ?? driver?.iRating ?? 0;
   const iratingAfter = driver?.NewIRating ?? iratingBefore;
@@ -116,10 +160,11 @@ export function parseSessionYaml(yamlText, fileName = "") {
 
   const trackName =
     weekend.TrackDisplayName ?? weekend.TrackName ?? "Unknown track";
-  const trackConfig = weekend.TrackConfigName ?? weekend.TrackCity ?? "";
+  const trackConfig = weekend.TrackConfigName ?? "";
 
   const series =
     weekend.SeriesName ??
+    (weekend.SeriesID ? `Series ${weekend.SeriesID}` : null) ??
     weekend.Category ??
     weekend.EventType ??
     "iRacing series";
@@ -149,9 +194,9 @@ export function parseSessionYaml(yamlText, fileName = "") {
     sof: Number(weekend.StrengthOfField ?? weekend.SOF ?? 0),
     iratingBefore: Number(iratingBefore),
     iratingAfter: Number(iratingAfter),
-    finishPos: Number(finishPos),
+    finishPos: Number(finishPos) || 0,
     fieldSize: Number(fieldSize) || 1,
-    incidents: Number(incidents),
+    incidents: Number(incidents) || 0,
     bestLapMs: bestLapMs > 0 ? bestLapMs : 1,
     avgLapMs: avgLapMs > 0 ? avgLapMs : bestLapMs || 1,
     racedAt: new Date().toISOString(),
@@ -159,5 +204,7 @@ export function parseSessionYaml(yamlText, fileName = "") {
     iracingCustId: driver?.UserID ? Number(driver.UserID) : undefined,
     displayName: driver?.UserName ? String(driver.UserName) : undefined,
     sessionType: session?.SessionType ? String(session.SessionType) : undefined,
+    waitingForResults,
+    raceComplete: Boolean(telemetry?.raceComplete),
   };
 }

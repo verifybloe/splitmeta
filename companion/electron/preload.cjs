@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("splitmeta", {
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   pickTelemetryDir: () => ipcRenderer.invoke("pick-telemetry-dir"),
   toggleWatcher: () => ipcRenderer.invoke("toggle-watcher"),
+  uploadLatest: () => ipcRenderer.invoke("upload-latest"),
   refreshSession: () => ipcRenderer.invoke("refresh-session"),
   getUpdateStatus: () => ipcRenderer.invoke("get-update-status"),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
