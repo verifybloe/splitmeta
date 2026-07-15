@@ -337,8 +337,10 @@ export async function getUserRecentRaces(userId: string, limit = 10) {
       iratingAfter: true,
       bestLapMs: true,
       racedAt: true,
+      seriesWeekId: true,
       seriesWeek: {
         select: {
+          id: true,
           weekNum: true,
           seasonYear: true,
           seasonQuarter: true,
@@ -354,6 +356,178 @@ export async function getUserRecentRaces(userId: string, limit = 10) {
       },
     },
   });
+}
+
+export type SampleDepth = "thin" | "building" | "solid";
+
+export function sampleDepthFromMeta(meta: WeeklyMetaView): {
+  depth: SampleDepth;
+  totalRaces: number;
+  setupCount: number;
+  label: string;
+} {
+  const totalRaces = meta.entries.reduce((n, e) => n + e.sampleRaces, 0);
+  const setupCount = meta.entries.length;
+  let depth: SampleDepth = "thin";
+  if (totalRaces >= 20 && setupCount >= 5) depth = "solid";
+  else if (totalRaces >= 5 || setupCount >= 3) depth = "building";
+
+  const label =
+    depth === "solid"
+      ? "Solid sample"
+      : depth === "building"
+        ? "Building sample"
+        : "Thin sample — early data";
+
+  return { depth, totalRaces, setupCount, label };
+}
+
+export function formatRelativeTime(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  const diffMs = Date.now() - t;
+  const mins = Math.round(diffMs / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 36) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+}
+
+export type UserWeekPulse = {
+  hasRaces: boolean;
+  uploadCount: number;
+  lastRace: {
+    finishPos: number;
+    fieldSize: number;
+    series: string;
+    track: string;
+    weekNum: number;
+    fingerprint: string;
+    carName: string;
+    racedAt: string;
+    iratingBefore: number;
+  } | null;
+  board: {
+    series: string;
+    track: string;
+    weekNum: number;
+    bandLabel: string;
+    band: string;
+    computedAt: string;
+    updatedLabel: string;
+    topEntry: MetaEntry | null;
+    yourRank: number | null;
+    metaMoved: boolean;
+    depth: ReturnType<typeof sampleDepthFromMeta>;
+  } | null;
+  briefing: PostRaceBriefing | null;
+};
+
+export async function getUserWeekPulse(
+  userId: string,
+  plan: "FREE" | "PRO",
+): Promise<UserWeekPulse> {
+  const races = await getUserRecentRaces(userId, 15);
+  const uploadCount = races.length;
+  const latest = races[0] ?? null;
+
+  if (!latest) {
+    return {
+      hasRaces: false,
+      uploadCount: 0,
+      lastRace: null,
+      board: null,
+      briefing: null,
+    };
+  }
+
+  const trackName = latest.seriesWeek.track.config
+    ? `${latest.seriesWeek.track.name} — ${latest.seriesWeek.track.config}`
+    : latest.seriesWeek.track.name;
+  const fingerprint = shortFingerprint(latest.setup.fingerprint);
+  const band = iratingToBand(latest.iratingBefore);
+
+  const lastRace = {
+    finishPos: latest.finishPos,
+    fieldSize: latest.fieldSize,
+    series: latest.seriesWeek.series.name,
+    track: trackName,
+    weekNum: latest.seriesWeek.weekNum,
+    fingerprint,
+    carName: latest.setup.car.name,
+    racedAt: latest.racedAt.toISOString(),
+    iratingBefore: latest.iratingBefore,
+  };
+
+  let briefing: PostRaceBriefing | null = null;
+  try {
+    briefing = await buildPostRaceBriefing({
+      plan,
+      seriesWeekId: latest.seriesWeekId,
+      fingerprintShort: fingerprint,
+      iratingBefore: latest.iratingBefore,
+      finishPos: latest.finishPos,
+      fieldSize: latest.fieldSize,
+    });
+  } catch {
+    briefing = null;
+  }
+
+  const weekMeta = await prisma.weeklyMeta.findUnique({
+    where: {
+      seriesWeekId_band: {
+        seriesWeekId: latest.seriesWeekId,
+        band,
+      },
+    },
+  });
+
+  if (!weekMeta) {
+    return {
+      hasRaces: true,
+      uploadCount,
+      lastRace,
+      board: null,
+      briefing,
+    };
+  }
+
+  const meta = JSON.parse(weekMeta.payload) as WeeklyMetaView;
+  const depth = sampleDepthFromMeta(meta);
+  const yourEntry = meta.entries.find(
+    (e) =>
+      e.fingerprint === fingerprint || e.fingerprint.startsWith(fingerprint),
+  );
+  const topEntry = meta.entries[0] ?? null;
+  const racedAt = latest.racedAt.getTime();
+  const computedAt = weekMeta.computedAt.getTime();
+  const metaMoved =
+    Boolean(topEntry) &&
+    computedAt > racedAt &&
+    yourEntry != null &&
+    topEntry!.fingerprint !== yourEntry.fingerprint;
+
+  return {
+    hasRaces: true,
+    uploadCount,
+    lastRace,
+    board: {
+      series: meta.series,
+      track: meta.track,
+      weekNum: meta.weekNum,
+      bandLabel: meta.bandLabel,
+      band: meta.band,
+      computedAt: weekMeta.computedAt.toISOString(),
+      updatedLabel: formatRelativeTime(weekMeta.computedAt.toISOString()),
+      topEntry,
+      yourRank: yourEntry?.rank ?? null,
+      metaMoved,
+      depth,
+    },
+    briefing,
+  };
 }
 
 export type PostRaceBriefing = {

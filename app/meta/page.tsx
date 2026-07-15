@@ -4,7 +4,11 @@ import {
   formatPaceDelta,
 } from "@/lib/mockMeta";
 import { auth } from "@/auth";
-import { getLatestMetaBoard } from "@/lib/metaCompute";
+import {
+  formatRelativeTime,
+  getLatestMetaBoard,
+  sampleDepthFromMeta,
+} from "@/lib/metaCompute";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
 
@@ -28,6 +32,10 @@ export default async function MetaBoard({ searchParams }: Props) {
   // Never show mock filler on the real board — only live DB rankings.
   const { meta, source } = await getLatestMetaBoard(preferredBand);
   const hasLive = source === "live" && meta.entries.length > 0;
+  const depth = sampleDepthFromMeta(meta);
+  const updatedLabel = meta.computedAt
+    ? formatRelativeTime(meta.computedAt)
+    : "";
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -44,6 +52,29 @@ export default async function MetaBoard({ searchParams }: Props) {
                 ? `${meta.car} · ${meta.track} · ${meta.seasonLabel}, Week ${meta.weekNum}`
                 : "Live rankings from crowd-sourced race uploads"}
             </p>
+            {hasLive ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                {updatedLabel ? (
+                  <span className="rounded-full border border-neutral-800 px-2.5 py-1 text-neutral-400">
+                    Updated {updatedLabel}
+                  </span>
+                ) : null}
+                <span
+                  className={`rounded-full border px-2.5 py-1 ${
+                    depth.depth === "solid"
+                      ? "border-emerald-800 text-emerald-400"
+                      : depth.depth === "building"
+                        ? "border-amber-800 text-amber-400"
+                        : "border-neutral-800 text-neutral-500"
+                  }`}
+                >
+                  {depth.label}
+                  {depth.totalRaces > 0
+                    ? ` · ${depth.totalRaces} races · ${depth.setupCount} setups`
+                    : ""}
+                </span>
+              </div>
+            ) : null}
           </div>
           <span className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-400">
             {hasLive

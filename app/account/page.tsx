@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { getUserRecentRaces } from "@/lib/metaCompute";
-import { shortFingerprint } from "@/lib/ingest";
+import { buildPostRaceBriefing, getUserRecentRaces } from "@/lib/metaCompute";
+import { iratingToBand, shortFingerprint } from "@/lib/ingest";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
+import { PostRaceBriefingCard } from "@/components/PostRaceBriefingCard";
 
 export const metadata = {
   title: "Account — SplitMeta",
@@ -33,6 +34,27 @@ export default async function AccountPage({ searchParams }: Props) {
   const { checkout } = await searchParams;
   const isPro = session.user.plan === "PRO";
   const races = await getUserRecentRaces(session.user.id, 15);
+  const latest = races[0] ?? null;
+
+  let briefing = null;
+  if (latest) {
+    try {
+      briefing = await buildPostRaceBriefing({
+        plan: isPro ? "PRO" : "FREE",
+        seriesWeekId: latest.seriesWeekId,
+        fingerprintShort: shortFingerprint(latest.setup.fingerprint),
+        iratingBefore: latest.iratingBefore,
+        finishPos: latest.finishPos,
+        fieldSize: latest.fieldSize,
+      });
+    } catch {
+      briefing = null;
+    }
+  }
+
+  const bandHref = latest
+    ? `/meta?band=${iratingToBand(latest.iratingBefore)}`
+    : "/meta";
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -83,6 +105,12 @@ export default async function AccountPage({ searchParams }: Props) {
             </Link>
           </div>
         </div>
+
+        {briefing ? (
+          <div className="mt-8">
+            <PostRaceBriefingCard briefing={briefing} bandHref={bandHref} />
+          </div>
+        ) : null}
 
         <div className="mt-8 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
           <div className="border-b border-neutral-800 px-6 py-4">
