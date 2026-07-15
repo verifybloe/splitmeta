@@ -7,6 +7,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Placeholder is fine for `prisma generate` on Vercel. Real DB comes later.
+    url: process.env.DATABASE_URL ?? "file:./dev.db",
   },
 });
