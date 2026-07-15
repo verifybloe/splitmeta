@@ -35,6 +35,8 @@ model User {
   stripeCurrentPeriodEnd   DateTime?
   uploadApiKeyHash         String?         @unique
   uploadApiKeyPrefix       String?
+  companionTokenHash       String?         @unique
+  companionTokenPrefix     String?
   createdAt                DateTime        @default(now())
   accounts                 Account[]
   sessions                 Session[]

@@ -95,9 +95,7 @@ npm run dev
 
 ## Ingest API
 
-Race + setup data is uploaded by the **Windows companion** after each session. Sign in at `/download`, grab the zip, run `install.bat` — your account links automatically.
-
-The companion calls `POST /api/ingest/session` with a per-account token created at download time. Re-download to reconnect a PC.
+Race + setup data is uploaded by the **desktop app** after each session. Sign in inside the app with the same Google account as the website — credentials are stored locally and remembered between launches.
 
 Identical `setupParams` in the same series week share one setup fingerprint. Re-sending the same `externalId` is a no-op (idempotent).
 
@@ -111,10 +109,10 @@ Rankings are recomputed:
 
 Optional env: `CRON_SECRET` — if set, send `Authorization: Bearer CRON_SECRET`.
 
-## Windows companion uploader
+## Windows desktop app
 
-See [`companion/README.md`](companion/README.md). Quick start:
+See [`companion/README.md`](companion/README.md).
 
-1. Sign in at `/download` on the site
-2. Click **Download & connect**, extract, run `install.bat`
-3. Run `START.bat` before racing
+1. Download from `/download`
+2. Run `install.bat`, sign in with Google in the app
+3. Leave the app running while you race

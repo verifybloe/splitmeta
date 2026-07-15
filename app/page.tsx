@@ -167,8 +167,8 @@ export default async function Home() {
                 </h2>
                 <p className="mt-4 text-neutral-400">
                   Watches your iRacing telemetry folder and uploads race results
-                  in the background. Sign in, download once, run install.bat —
-                  your account connects automatically.
+                  in the background. Download the desktop app, sign in with
+                  Google — same account, remembered on your PC.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-neutral-300">
                   <li className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export default async function Home() {
                   href={downloadHref}
                   className="mt-8 inline-flex rounded-lg bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500"
                 >
-                  {session?.user ? "Download now" : "Sign in to download"}
+                  {session?.user ? "Download app" : "Sign in to download"}
                 </Link>
               </div>
               <div className="flex flex-col justify-center bg-neutral-950 p-8 lg:p-10">

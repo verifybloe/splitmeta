@@ -1,5 +1,5 @@
 @echo off
-title SplitMeta Companion
+title SplitMeta
 cd /d "%~dp0"
 
 where node >nul 2>nul
@@ -15,5 +15,4 @@ if not exist node_modules (
   exit /b 1
 )
 
-node src/index.mjs
-pause
+npm start

@@ -1,22 +1,19 @@
 {
   "name": "splitmeta-companion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "SplitMeta companion uploader: watches iRacing telemetry and uploads race results + setups to splitmeta.net",
+  "description": "SplitMeta desktop app — sign in, dashboard, auto-upload iRacing telemetry",
   "type": "module",
-  "main": "src/index.mjs",
-  "bin": {
-    "splitmeta-companion": "src/index.mjs"
-  },
+  "main": "electron/main.mjs",
   "scripts": {
-    "start": "node src/index.mjs",
-    "setup": "node src/index.mjs --setup",
-    "upload-latest": "node src/index.mjs --upload-latest"
+    "start": "electron .",
+    "cli": "node src/index.mjs"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "electron": "^33.2.1",
     "yaml": "^2.6.0"
   }
 }

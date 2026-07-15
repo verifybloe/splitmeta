@@ -80,15 +80,14 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
           <div className="px-6 py-5">
             <p className="text-sm text-neutral-400">
-              Download while signed in — your account links automatically. Run{" "}
-              <code className="text-neutral-300">install.bat</code> once, then{" "}
-              <code className="text-neutral-300">START.bat</code> before racing.
+              Desktop app with dashboard. Sign in with Google (same as the
+              website) — it remembers you. Auto-uploads after each race.
             </p>
             <Link
               href="/download"
               className="mt-4 inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2.5 font-semibold text-white hover:bg-red-500"
             >
-              Download &amp; connect
+              Download app
               <span aria-hidden className="text-red-200">
                 →
               </span>

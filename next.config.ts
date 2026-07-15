@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       "./companion/install.bat",
       "./companion/START.bat",
       "./companion/src/**/*",
+      "./companion/electron/**/*",
+      "./companion/ui/**/*",
     ],
   },
 };
