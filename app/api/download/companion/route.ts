@@ -1,26 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { companionZipStream } from "@/lib/companionPackage";
 
-export const runtime = "nodejs";
+const INSTALLER_URL =
+  process.env.SPLITMETA_INSTALLER_URL ??
+  "https://github.com/verifybloe/splitmeta/releases/download/app-latest/SplitMeta-Setup.exe";
 
-const ZIP_NAME = "splitmeta-companion.zip";
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.redirect(
-      new URL("/login?callbackUrl=/download", req.url),
+      new URL("/login?callbackUrl=/download", process.env.NEXT_PUBLIC_APP_URL ?? "https://www.splitmeta.net"),
     );
   }
 
-  const body = companionZipStream();
-
-  return new NextResponse(body, {
-    headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${ZIP_NAME}"`,
-      "Cache-Control": "private, no-store",
-    },
-  });
+  return NextResponse.redirect(INSTALLER_URL);
 }

@@ -19,14 +19,21 @@ import { createWatcher } from "../src/watcher.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PORT = 38491;
 const DEFAULT_SITE = "https://www.splitmeta.net";
-const APP_ICON = path.join(__dirname, "..", "assets", "icon.png");
 
 let mainWindow = null;
 let watcher = null;
 let session = loadSession();
 
+function appRoot() {
+  return app.getAppPath();
+}
+
 function uiPath(file) {
-  return path.join(__dirname, "..", "ui", file);
+  return path.join(appRoot(), "ui", file);
+}
+
+function iconPath() {
+  return path.join(appRoot(), "assets", "icon.png");
 }
 
 function send(channel, payload) {
@@ -217,12 +224,21 @@ function createWindow() {
     autoHideMenuBar: true,
     show: false,
     title: "SplitMeta",
-    icon: existsSync(APP_ICON) ? APP_ICON : undefined,
+    icon: existsSync(iconPath()) ? iconPath() : undefined,
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs"),
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false,
     },
+  });
+
+  mainWindow.webContents.on("did-fail-load", (_event, code, desc, url) => {
+    console.error("Load failed:", code, desc, url);
+  });
+
+  mainWindow.webContents.on("preload-error", (_event, preloadPath, err) => {
+    console.error("Preload error:", preloadPath, err);
   });
 
   mainWindow.once("ready-to-show", () => {

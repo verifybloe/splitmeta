@@ -1,0 +1,40 @@
+name: Build SplitMeta Windows App
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "companion/**"
+      - ".github/workflows/build-app.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: companion/package-lock.json
+
+      - name: Install and build
+        working-directory: companion
+        run: |
+          npm ci
+          npm run build:app
+
+      - name: Publish installer to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-latest
+          name: SplitMeta Windows App
+          body: Automated Windows installer build.
+          files: companion/dist/SplitMeta-Setup.exe
+          make_latest: true
+          overwrite_files: true

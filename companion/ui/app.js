@@ -145,18 +145,27 @@ function renderDashboard(session) {
 }
 
 async function boot() {
+  if (!window.splitmeta) {
+    renderLogin("App failed to start. Reinstall from splitmeta.net/download");
+    return;
+  }
+
   window.splitmeta.onSessionUpdated((session) => {
     renderDashboard(session);
   });
 
-  let session = await window.splitmeta.getSession();
-  if (!session) {
-    session = await window.splitmeta.refreshSession();
-  }
-  if (session) {
-    renderDashboard(session);
-  } else {
-    renderLogin();
+  try {
+    let session = await window.splitmeta.getSession();
+    if (!session) {
+      session = await window.splitmeta.refreshSession();
+    }
+    if (session) {
+      renderDashboard(session);
+    } else {
+      renderLogin();
+    }
+  } catch (err) {
+    renderLogin(err instanceof Error ? err.message : "Failed to load session");
   }
 }
 

@@ -80,9 +80,8 @@ export default async function AccountPage({ searchParams }: Props) {
           </div>
           <div className="px-6 py-5">
             <p className="text-sm text-neutral-400">
-              Run <strong className="text-neutral-300">Setup.bat</strong> once,
-              then open SplitMeta from your Desktop — a normal Windows app, no
-              console windows.
+              Download <strong className="text-neutral-300">SplitMeta-Setup.exe</strong>,
+              run it once, then open SplitMeta from your Desktop.
             </p>
             <Link
               href="/download"

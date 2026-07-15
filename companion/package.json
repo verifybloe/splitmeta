@@ -2,13 +2,13 @@
   "name": "splitmeta",
   "version": "0.2.0",
   "private": true,
-  "description": "SplitMeta desktop app for iRacing — dashboard, sign-in, auto-upload telemetry",
+  "description": "SplitMeta desktop app for iRacing",
   "author": "SplitMeta",
   "type": "module",
   "main": "electron/main.mjs",
   "scripts": {
     "start": "electron .",
-    "build:app": "electron-builder --win portable",
+    "build:app": "electron-builder --win nsis",
     "postinstall": "node ./node_modules/electron/install.js"
   },
   "engines": {
@@ -35,19 +35,26 @@
       "assets/**/*",
       "package.json"
     ],
+    "asarUnpack": [],
     "win": {
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": ["x64"]
         }
       ],
       "icon": "assets/icon.png",
-      "artifactName": "SplitMeta.exe",
       "signAndEditExecutable": false
     },
-    "portable": {
-      "artifactName": "SplitMeta.exe"
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "shortcutName": "SplitMeta",
+      "artifactName": "SplitMeta-Setup.exe"
     }
   }
 }
