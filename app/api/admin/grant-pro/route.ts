@@ -34,29 +34,42 @@ export async function POST(req: Request) {
     select: { id: true, email: true, plan: true },
   });
 
-  if (!existing) {
-    return NextResponse.json(
-      { error: `No user found for ${email}` },
-      { status: 404 },
-    );
-  }
+  // Comp Pro only — never elevates to any admin role (there isn't one).
+  // Creates the user shell if they haven't signed up yet so Google/email
+  // login with this address picks up PRO immediately.
+  const user = existing
+    ? await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          plan: "PRO",
+          stripeSubscriptionId: null,
+          stripePriceId: null,
+          stripeCurrentPeriodEnd: new Date("2099-12-31T00:00:00.000Z"),
+        },
+        select: {
+          id: true,
+          email: true,
+          plan: true,
+          stripeCurrentPeriodEnd: true,
+        },
+      })
+    : await prisma.user.create({
+        data: {
+          email,
+          plan: "PRO",
+          stripeCurrentPeriodEnd: new Date("2099-12-31T00:00:00.000Z"),
+        },
+        select: {
+          id: true,
+          email: true,
+          plan: true,
+          stripeCurrentPeriodEnd: true,
+        },
+      });
 
-  const user = await prisma.user.update({
-    where: { id: existing.id },
-    data: {
-      plan: "PRO",
-      // Comp: no Stripe sub so cancel webhooks won't flip them back.
-      stripeSubscriptionId: null,
-      stripePriceId: null,
-      stripeCurrentPeriodEnd: new Date("2099-12-31T00:00:00.000Z"),
-    },
-    select: {
-      id: true,
-      email: true,
-      plan: true,
-      stripeCurrentPeriodEnd: true,
-    },
+  return NextResponse.json({
+    ok: true,
+    created: !existing,
+    user,
   });
-
-  return NextResponse.json({ ok: true, user });
 }
