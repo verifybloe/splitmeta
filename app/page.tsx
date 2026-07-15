@@ -301,24 +301,9 @@ export default async function Home() {
             </div>
           </section>
         </>
-      ) : (
-        <section className="mx-auto max-w-5xl px-6 py-12">
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-neutral-800 bg-neutral-900/60 px-5 py-4">
-            <p className="text-sm text-neutral-400">
-              Keep the companion running so next week&apos;s meta stays fresh
-              for your band.
-            </p>
-            <Link
-              href="/download"
-              className="text-sm font-medium text-red-400 hover:text-red-300"
-            >
-              Download / reopen app →
-            </Link>
-          </div>
-        </section>
-      )}
+      ) : null}
 
-      <footer className="border-t border-neutral-800 py-8 text-center text-sm text-neutral-600">
+      <footer className="border-t border-neutral-800 py-6 text-center text-sm text-neutral-600">
         SplitMeta — crowd-sourced setup meta for iRacing. Not affiliated with
         iRacing.com Motorsport Simulations.
       </footer>
