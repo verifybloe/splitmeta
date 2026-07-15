@@ -12,7 +12,13 @@ contextBridge.exposeInMainWorld("splitmeta", {
   pickTelemetryDir: () => ipcRenderer.invoke("pick-telemetry-dir"),
   toggleWatcher: () => ipcRenderer.invoke("toggle-watcher"),
   refreshSession: () => ipcRenderer.invoke("refresh-session"),
+  getUpdateStatus: () => ipcRenderer.invoke("get-update-status"),
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  installUpdate: () => ipcRenderer.invoke("install-update"),
   onSessionUpdated: (callback) => {
     ipcRenderer.on("session-updated", (_event, session) => callback(session));
+  },
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on("update-status", (_event, status) => callback(status));
   },
 });

@@ -15,6 +15,12 @@ import {
   defaultSession,
 } from "../src/session.mjs";
 import { createWatcher } from "../src/watcher.mjs";
+import {
+  initAutoUpdater,
+  getUpdateStatus,
+  checkForUpdatesNow,
+  installUpdateNow,
+} from "./updater.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PORT = 38491;
@@ -64,6 +70,7 @@ function publicSession() {
     activity: session.activity ?? [],
     watching: Boolean(watcher),
     telemetryExists: existsSync(session.telemetryDir ?? ""),
+    appVersion: app.getVersion(),
   };
 }
 
@@ -310,6 +317,10 @@ function createWindow() {
   });
 
   mainWindow.loadFile(uiPath("index.html"));
+
+  mainWindow.webContents.once("did-finish-load", () => {
+    initAutoUpdater(mainWindow);
+  });
 }
 
 const gotLock = app.requestSingleInstanceLock();
@@ -425,4 +436,29 @@ ipcMain.handle("refresh-session", async () => {
   }
   broadcastState();
   return publicSession();
+});
+
+ipcMain.handle("get-update-status", async () => getUpdateStatus());
+
+ipcMain.handle("check-for-updates", async () => {
+  try {
+    return { ok: true, status: await checkForUpdatesNow() };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Update check failed",
+    };
+  }
+});
+
+ipcMain.handle("install-update", async () => {
+  try {
+    await installUpdateNow();
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Install failed",
+    };
+  }
 });

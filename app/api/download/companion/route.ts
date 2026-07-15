@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 
 const INSTALLER_URL =
   process.env.SPLITMETA_INSTALLER_URL ??
-  "https://github.com/verifybloe/splitmeta/releases/download/app-latest/SplitMeta-Setup.exe";
+  "https://github.com/verifybloe/splitmeta/releases/latest/download/SplitMeta-Setup.exe";
 
 export async function GET() {
   const session = await auth();

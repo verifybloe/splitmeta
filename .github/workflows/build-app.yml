@@ -29,12 +29,24 @@ jobs:
           npm ci
           npm run build:app
 
-      - name: Publish installer to GitHub Release
+      - name: Read app version
+        id: version
+        working-directory: companion
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish installer + updater files
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: app-latest
-          name: SplitMeta Windows App
-          body: Automated Windows installer build.
-          files: companion/dist/SplitMeta-Setup.exe
+          tag_name: v${{ steps.version.outputs.version }}
+          name: SplitMeta v${{ steps.version.outputs.version }}
+          body: |
+            SplitMeta Windows installer with auto-updater support.
+
+            Download **SplitMeta-Setup.exe**, run it once, then open SplitMeta from Desktop.
+          files: |
+            companion/dist/SplitMeta-Setup.exe
+            companion/dist/SplitMeta-Setup.exe.blockmap
+            companion/dist/latest.yml
           make_latest: true
-          overwrite_files: true
+          fail_on_unmatched_files: true

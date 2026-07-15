@@ -1,6 +1,6 @@
 {
   "name": "splitmeta",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "private": true,
   "description": "SplitMeta desktop app for iRacing",
   "author": "SplitMeta",
@@ -16,6 +16,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "yaml": "^2.6.0"
   },
   "devDependencies": {
@@ -39,11 +40,20 @@
       "package.json"
     ],
     "asarUnpack": [],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "verifybloe",
+        "repo": "splitmeta"
+      }
+    ],
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"

@@ -1,6 +1,6 @@
 # SplitMeta Desktop App
 
-Professional Windows app — one installer, dashboard, Google sign-in, auto-upload.
+Professional Windows app — one installer, dashboard, Google/email sign-in, auto-upload, auto-update.
 
 ## Install
 
@@ -9,17 +9,22 @@ Professional Windows app — one installer, dashboard, Google sign-in, auto-uplo
 3. Run the installer
 4. Open **SplitMeta** from Desktop or Start Menu
 
-No Node.js, batch files, or manual setup required.
+## Auto updates
+
+Every launch, the installed app checks GitHub Releases for a newer version, downloads it in the background, then asks you to **Restart & update**.
 
 ## Daily use
 
-Open SplitMeta from your Desktop. Sign in with Google (same as splitmeta.net). Leave it running while you race.
+1. Open SplitMeta
+2. Sign in (email/password or Google)
+3. Click **Start watching** before you race
+4. Leave it open while racing
 
 ## Developers
 
 ```powershell
 cd companion
 npm install
-npm start           # dev
+npm start           # dev (no auto-update)
 npm run build:app   # dist/SplitMeta-Setup.exe
 ```

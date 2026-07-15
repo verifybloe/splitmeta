@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 const INSTALLER_URL =
-  "https://github.com/verifybloe/splitmeta/releases/download/app-latest/SplitMeta-Setup.exe";
+  "https://github.com/verifybloe/splitmeta/releases/latest/download/SplitMeta-Setup.exe";
 
 const STEPS = [
   {
@@ -21,7 +21,7 @@ const STEPS = [
   },
   {
     title: "Open SplitMeta & sign in",
-    body: "Sign in with Google — same account as splitmeta.net. Stays signed in.",
+    body: "Sign in with email/password or Google — same account as splitmeta.net. Stays signed in.",
   },
   {
     title: "Leave it running while you race",
