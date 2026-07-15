@@ -1,11 +1,22 @@
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY && process.env.NODE_ENV === "production") {
-  console.warn("STRIPE_SECRET_KEY is not set");
+let stripeClient: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (stripeClient) return stripeClient;
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
+  stripeClient = new Stripe(key, { typescript: true });
+  return stripeClient;
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_placeholder", {
-  typescript: true,
+/** @deprecated Prefer getStripe() — kept for existing imports */
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getStripe(), prop, receiver);
+  },
 });
 
 export function getStripePriceId() {

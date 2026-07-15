@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/SiteHeader";
 import { BillingButton } from "@/components/BillingButton";
+import { UploadKeyPanel } from "@/components/UploadKeyPanel";
 
 export const metadata = {
   title: "Account — SplitMeta",
@@ -20,6 +22,11 @@ export default async function AccountPage({ searchParams }: Props) {
 
   const { checkout } = await searchParams;
   const isPro = session.user.plan === "PRO";
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { uploadApiKeyPrefix: true },
+  });
 
   return (
     <main className="flex-1 bg-neutral-950 text-neutral-100">
@@ -70,6 +77,8 @@ export default async function AccountPage({ searchParams }: Props) {
             </Link>
           </div>
         </div>
+
+        <UploadKeyPanel prefix={dbUser?.uploadApiKeyPrefix ?? null} />
       </div>
     </main>
   );

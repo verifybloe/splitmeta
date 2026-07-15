@@ -20,8 +20,9 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 
 - [x] Next.js app + landing + meta board (mock data)
 - [x] Prisma schema (Postgres) + Auth.js Google login + Stripe Checkout
-- [ ] Neon DB + env vars configured in Vercel
-- [ ] Ingest API + meta computation job
+- [x] Neon DB + env vars configured in Vercel
+- [x] Ingest API (`POST /api/ingest/session`) + account upload API keys
+- [ ] Meta computation job (nightly rankings)
 - [ ] Windows companion uploader
 
 ## Tech stack
@@ -91,3 +92,42 @@ npm install
 npx prisma migrate deploy
 npm run dev
 ```
+
+## Ingest API
+
+Upload race + setup data used later by the meta ranking job.
+
+1. Sign in at `/account` → **Generate API key** (copy once)
+2. `POST https://www.splitmeta.net/api/ingest/session`
+3. Header: `Authorization: Bearer sm_...`
+
+Example body:
+
+```json
+{
+  "externalId": "iracing-sub-12345",
+  "series": "GT3 Fixed — Falken Tyre Sports Car Challenge",
+  "car": "Ferrari 296 GT3",
+  "track": "Circuit de Spa-Francorchamps",
+  "trackConfig": "Grand Prix",
+  "seasonYear": 2026,
+  "seasonQuarter": 3,
+  "weekNum": 4,
+  "sof": 2400,
+  "iratingBefore": 2310,
+  "iratingAfter": 2335,
+  "finishPos": 4,
+  "fieldSize": 18,
+  "incidents": 2,
+  "bestLapMs": 137821,
+  "avgLapMs": 139040,
+  "racedAt": "2026-07-14T22:15:00.000Z",
+  "setupParams": {
+    "rearWing": 8,
+    "frontARB": 5,
+    "LFColdPressure": 26.4
+  }
+}
+```
+
+Identical `setupParams` in the same series week share one setup fingerprint. Re-sending the same `externalId` is a no-op (idempotent).
