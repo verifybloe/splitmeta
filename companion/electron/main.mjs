@@ -183,7 +183,64 @@ function waitForAuthCallback(expectedState) {
   });
 }
 
-async function signIn() {
+async function finishLoginFromCredentials(creds) {
+  const next = {
+    ...defaultSession(),
+    siteUrl: creds.siteUrl || DEFAULT_SITE,
+    companionToken: creds.companionToken ?? "",
+    apiKey: creds.apiKey ?? "",
+    email: creds.email ?? "",
+    name: creds.name ?? "",
+    plan: creds.plan ?? "FREE",
+    telemetryDir: session?.telemetryDir ?? defaultSession().telemetryDir,
+    uploaded: session?.uploaded ?? [],
+    activity: [],
+  };
+
+  if (!isLoggedIn(next)) {
+    throw new Error("Invalid login response");
+  }
+
+  session = pushActivity(next, {
+    type: "info",
+    message: `Signed in as ${next.email}`,
+  });
+  saveSession(session);
+  await validateSession();
+  startWatcher();
+  broadcastState();
+  return publicSession();
+}
+
+async function signInWithEmail(email, password) {
+  const site = session?.siteUrl ?? DEFAULT_SITE;
+  const res = await fetch(`${site}/api/companion/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? "Sign in failed");
+  }
+  return finishLoginFromCredentials(data);
+}
+
+async function signUpWithEmail(email, password, name) {
+  const site = session?.siteUrl ?? DEFAULT_SITE;
+  const res = await fetch(`${site}/api/companion/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, name }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? "Registration failed");
+  }
+  return finishLoginFromCredentials(data);
+}
+
+async function signInGoogle() {
   const state = randomBytes(16).toString("hex");
   const site = session?.siteUrl ?? DEFAULT_SITE;
   const connectUrl = `${site}/companion/connect?port=${AUTH_PORT}&state=${state}`;
@@ -290,11 +347,33 @@ ipcMain.handle("get-session", async () => publicSession());
 
 ipcMain.handle("sign-in", async () => {
   try {
-    return { ok: true, session: await signIn() };
+    return { ok: true, session: await signInGoogle() };
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Sign in failed",
+    };
+  }
+});
+
+ipcMain.handle("sign-in-email", async (_event, { email, password }) => {
+  try {
+    return { ok: true, session: await signInWithEmail(email, password) };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Sign in failed",
+    };
+  }
+});
+
+ipcMain.handle("sign-up-email", async (_event, { email, password, name }) => {
+  try {
+    return { ok: true, session: await signUpWithEmail(email, password, name) };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Registration failed",
     };
   }
 });

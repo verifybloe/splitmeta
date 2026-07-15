@@ -19,26 +19,76 @@ function formatTime(iso) {
   }
 }
 
-function renderLogin(error) {
+function renderLogin(error, mode = "signin") {
   app.innerHTML = `
     <div class="shell login-wrap">
       <div class="card card-accent login-card">
         <p class="eyebrow">SplitMeta for iRacing</p>
-        <h1>Sign in to continue</h1>
-        <p class="muted small">Use the same Google account as splitmeta.net. Your session stays signed in on this PC.</p>
-        <button class="btn btn-white" id="sign-in" style="width:100%;margin-top:24px">Continue with Google</button>
+        <h1>${mode === "register" ? "Create account" : "Sign in"}</h1>
+        <p class="muted small">Same account as splitmeta.net — email or Google.</p>
+
+        <form id="email-form" class="auth-form">
+          ${
+            mode === "register"
+              ? `<input type="text" id="name" class="field" placeholder="Name (optional)" autocomplete="name" />`
+              : ""
+          }
+          <input type="email" id="email" class="field" placeholder="Email" required autocomplete="email" />
+          <input type="password" id="password" class="field" placeholder="Password (8+ characters)" required minlength="8" autocomplete="${mode === "register" ? "new-password" : "current-password"}" />
+          <button type="submit" class="btn btn-primary" id="email-submit" style="width:100%">
+            ${mode === "register" ? "Create account" : "Sign in with email"}
+          </button>
+        </form>
+
+        <p class="auth-toggle muted small">
+          ${
+            mode === "register"
+              ? `Already have an account? <button type="button" class="link-btn" id="toggle-mode">Sign in</button>`
+              : `No account? <button type="button" class="link-btn" id="toggle-mode">Create one</button>`
+          }
+        </p>
+
+        <div class="divider"><span>or</span></div>
+
+        <button class="btn btn-white" id="sign-in-google" style="width:100%">Continue with Google</button>
         ${error ? `<p class="error">${esc(error)}</p>` : ""}
       </div>
     </div>
   `;
 
-  document.getElementById("sign-in").addEventListener("click", async () => {
-    const btn = document.getElementById("sign-in");
+  document.getElementById("toggle-mode")?.addEventListener("click", () => {
+    renderLogin(null, mode === "register" ? "signin" : "register");
+  });
+
+  document.getElementById("email-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("email-submit");
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const name = document.getElementById("name")?.value?.trim() ?? "";
+
+    btn.disabled = true;
+    btn.textContent = "Please wait…";
+
+    const result =
+      mode === "register"
+        ? await window.splitmeta.signUpWithEmail(email, password, name)
+        : await window.splitmeta.signInWithEmail(email, password);
+
+    if (!result.ok) {
+      renderLogin(result.error, mode);
+      return;
+    }
+    renderDashboard(result.session);
+  });
+
+  document.getElementById("sign-in-google").addEventListener("click", async () => {
+    const btn = document.getElementById("sign-in-google");
     btn.disabled = true;
     btn.textContent = "Opening browser…";
     const result = await window.splitmeta.signIn();
     if (!result.ok) {
-      renderLogin(result.error);
+      renderLogin(result.error, mode);
       return;
     }
     renderDashboard(result.session);

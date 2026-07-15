@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { generateCompanionToken } from "@/lib/companionAuth";
-import { generateUploadApiKey } from "@/lib/ingest";
+import { issueCompanionCredentials } from "@/lib/companionConnect";
 import { SiteHeader } from "@/components/SiteHeader";
 import { CompanionConnectRedirect } from "@/components/CompanionConnectRedirect";
 
@@ -56,27 +54,16 @@ export default async function CompanionConnectPage({ searchParams }: Props) {
     );
   }
 
-  const companion = generateCompanionToken();
-  const upload = generateUploadApiKey();
-
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: {
-      companionTokenHash: companion.hash,
-      companionTokenPrefix: companion.prefix,
-      uploadApiKeyHash: upload.hash,
-      uploadApiKeyPrefix: upload.prefix,
-    },
-  });
+  const creds = await issueCompanionCredentials(session.user.id, siteUrl());
 
   const callback = new URL(`http://127.0.0.1:${portNum}/callback`);
   callback.searchParams.set("state", state!);
-  callback.searchParams.set("companionToken", companion.raw);
-  callback.searchParams.set("apiKey", upload.raw);
-  callback.searchParams.set("email", session.user.email);
-  callback.searchParams.set("plan", session.user.plan);
-  callback.searchParams.set("name", session.user.name ?? "");
-  callback.searchParams.set("siteUrl", siteUrl());
+  callback.searchParams.set("companionToken", creds.companionToken);
+  callback.searchParams.set("apiKey", creds.apiKey);
+  callback.searchParams.set("email", creds.email);
+  callback.searchParams.set("plan", creds.plan);
+  callback.searchParams.set("name", creds.name ?? "");
+  callback.searchParams.set("siteUrl", creds.siteUrl);
 
   const target = callback.toString();
 

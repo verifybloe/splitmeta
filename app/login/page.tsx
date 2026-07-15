@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signIn, auth } from "@/auth";
+import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
+import { LoginForm } from "@/components/LoginForm";
 
 export const metadata = {
   title: "Sign in — SplitMeta",
@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: Props) {
             {isDownload ? (
               <>
                 Sign in to download the{" "}
-                <span className="text-red-500">companion</span>
+                <span className="text-red-500">app</span>
               </>
             ) : (
               <>
@@ -39,29 +39,9 @@ export default async function LoginPage({ searchParams }: Props) {
             )}
           </h1>
           <p className="mt-2 text-sm text-neutral-400">
-            {isDownload
-              ? "Use Google to verify your account, then grab the Windows uploader."
-              : "Use Google to create your account. Upgrade anytime for $8/mo."}
+            Email &amp; password or Google — same account everywhere.
           </p>
-          <form
-            className="mt-8"
-            action={async () => {
-              "use server";
-              await signIn("google", { redirectTo: next });
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-white px-4 py-3 font-semibold text-neutral-900 hover:bg-neutral-200"
-            >
-              Continue with Google
-            </button>
-          </form>
-          {isDownload && (
-            <p className="mt-4 text-xs text-neutral-500">
-              Free to download · contributes data to your iRating band
-            </p>
-          )}
+          <LoginForm callbackUrl={next} />
         </div>
       </div>
     </main>
