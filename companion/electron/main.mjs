@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage } from "electron";
+import { app, BrowserWindow, ipcMain, shell, dialog, nativeImage, Notification } from "electron";
 import {
   loadSession,
   saveSession,
@@ -27,6 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AUTH_PORT = 38491;
 const DEFAULT_SITE = "https://www.splitmeta.net";
 const AUTO_POLL_MS = 5000;
+const ALERT_POLL_MS = 45_000;
 
 let mainWindow = null;
 let watcher = null;
@@ -37,6 +38,11 @@ let lastAutoState = "";
 /** After an auto upload, stay paused until iRacing exits or a new .ibt appears. */
 let autoArmed = true;
 let lastAutoUploadedFile = null;
+let alertTimer = null;
+let alertsSeeded = false;
+const knownAlertIds = new Set();
+/** Unread watchlist alerts shown as in-app toasts. */
+let toastAlerts = [];
 
 function appRoot() {
   return app.getAppPath();
@@ -80,6 +86,7 @@ function publicSession() {
     autoMode: Boolean(session.autoMode),
     autoLabel: lastAutoState,
     latestBriefing: session.latestBriefing ?? null,
+    watchlistAlerts: toastAlerts,
     telemetryExists: existsSync(session.telemetryDir ?? ""),
     appVersion: app.getVersion(),
   };
@@ -103,10 +110,111 @@ async function validateSession() {
       lastAutoState = "";
     }
     saveSession(session);
+    if (session.plan === "PRO") {
+      startAlertPoll();
+    } else {
+      stopAlertPoll();
+      toastAlerts = [];
+      alertsSeeded = false;
+      knownAlertIds.clear();
+    }
     return true;
   } catch {
     return false;
   }
+}
+
+function stopAlertPoll() {
+  if (alertTimer) {
+    clearInterval(alertTimer);
+    alertTimer = null;
+  }
+}
+
+function startAlertPoll() {
+  stopAlertPoll();
+  if (!session || !isLoggedIn(session) || session.plan !== "PRO") return;
+  void tickWatchlistAlerts();
+  alertTimer = setInterval(() => {
+    void tickWatchlistAlerts();
+  }, ALERT_POLL_MS);
+}
+
+async function tickWatchlistAlerts() {
+  if (!session || !isLoggedIn(session) || session.plan !== "PRO") return;
+  try {
+    const res = await fetch(
+      `${session.siteUrl}/api/companion/watchlist?unread=1`,
+      { headers: { Authorization: `Bearer ${session.companionToken}` } },
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    const alerts = Array.isArray(data.alerts) ? data.alerts : [];
+
+    if (!alertsSeeded) {
+      for (const alert of alerts) knownAlertIds.add(alert.id);
+      toastAlerts = alerts.slice(0, 5);
+      alertsSeeded = true;
+      broadcastState();
+      return;
+    }
+
+    const fresh = alerts.filter((alert) => !knownAlertIds.has(alert.id));
+    if (fresh.length === 0) return;
+
+    for (const alert of fresh) {
+      knownAlertIds.add(alert.id);
+      toastAlerts = [alert, ...toastAlerts.filter((t) => t.id !== alert.id)].slice(
+        0,
+        5,
+      );
+      session = pushActivity(session, {
+        type: "info",
+        message: `Watchlist: ${alert.message}`,
+      });
+      if (Notification.isSupported()) {
+        const note = new Notification({
+          title: "Meta moved",
+          body: alert.message,
+          icon: getAppIcon(),
+        });
+        note.on("click", () => {
+          void openAlert(alert.id, true);
+        });
+        note.show();
+      }
+    }
+    saveSession(session);
+    broadcastState();
+  } catch {
+    // ignore network blips
+  }
+}
+
+async function markAlertsRead(alertIds) {
+  if (!session || !isLoggedIn(session) || session.plan !== "PRO") return;
+  try {
+    await fetch(`${session.siteUrl}/api/companion/watchlist`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.companionToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "mark-read", alertIds }),
+    });
+  } catch {
+    // ignore
+  }
+}
+
+async function openAlert(alertId, openBoard) {
+  const alert = toastAlerts.find((a) => a.id === alertId);
+  toastAlerts = toastAlerts.filter((a) => a.id !== alertId);
+  await markAlertsRead(alertId ? [alertId] : undefined);
+  if (openBoard && alert?.boardHref && session?.siteUrl) {
+    await shell.openExternal(`${session.siteUrl}${alert.boardHref}`);
+  }
+  broadcastState();
 }
 
 function stopWatcher() {
@@ -433,7 +541,11 @@ async function signOut() {
   }
   stopAutoLoop();
   stopWatcher();
+  stopAlertPoll();
   lastAutoState = "";
+  alertsSeeded = false;
+  knownAlertIds.clear();
+  toastAlerts = [];
   clearSession();
   session = null;
   broadcastState();
@@ -535,6 +647,7 @@ app.whenReady().then(async () => {
 app.on("window-all-closed", () => {
   stopAutoLoop();
   stopWatcher();
+  stopAlertPoll();
   if (process.platform !== "darwin") app.quit();
 });
 
@@ -702,6 +815,18 @@ ipcMain.handle("dismiss-briefing", async () => {
   saveSession(session);
   broadcastState();
   return publicSession();
+});
+
+ipcMain.handle("dismiss-watchlist-alert", async (_event, { id, open } = {}) => {
+  await openAlert(id, Boolean(open));
+  return publicSession();
+});
+
+ipcMain.handle("open-briefing-meta", async () => {
+  const href = session?.latestBriefing?.boardHref;
+  const site = session?.siteUrl ?? DEFAULT_SITE;
+  await shell.openExternal(href ? `${site}${href}` : `${site}/meta`);
+  return true;
 });
 
 ipcMain.handle("toggle-watcher", async () => {

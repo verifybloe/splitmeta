@@ -80,7 +80,7 @@ export async function listMetaAlerts(
     message: row.message,
     readAt: row.readAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
-    boardHref: `/meta?band=${encodeURIComponent(row.band)}`,
+    boardHref: `/meta?series=${encodeURIComponent(row.seriesId)}&band=${encodeURIComponent(row.band)}`,
   }));
 }
 

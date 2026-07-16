@@ -178,6 +178,29 @@ function formatPaceDelta(ms) {
   return `${sign}${(Math.abs(ms) / 1000).toFixed(3)}s`;
 }
 
+function watchlistToastsHtml(alerts) {
+  if (!alerts?.length) return "";
+  return `
+    <div class="toast-stack" id="toast-stack">
+      ${alerts
+        .map(
+          (a) => `
+        <div class="toast" data-alert-id="${esc(a.id)}">
+          <div class="toast-body">
+            <p class="toast-eyebrow">Watchlist · meta moved</p>
+            <p class="toast-msg">${esc(a.message)}</p>
+          </div>
+          <div class="toast-actions">
+            <button type="button" class="btn btn-primary toast-open" data-id="${esc(a.id)}">Open</button>
+            <button type="button" class="link-btn footer-link toast-dismiss" data-id="${esc(a.id)}">Dismiss</button>
+          </div>
+        </div>`,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function briefingHtml(briefing) {
   if (!briefing) return "";
 
@@ -199,6 +222,12 @@ function briefingHtml(briefing) {
     .map((d) => `<li>${esc(d)}</li>`)
     .join("");
   const verdictClass = `verdict-${esc(briefing.verdict || "competitive")}`;
+  const depthClass =
+    briefing.sampleDepth === "solid"
+      ? "depth-solid"
+      : briefing.sampleDepth === "building"
+        ? "depth-building"
+        : "depth-thin";
 
   return `
     <div class="briefing-card">
@@ -211,6 +240,11 @@ function briefingHtml(briefing) {
       ${
         briefing.action
           ? `<p class="briefing-action">${esc(briefing.action)}</p>`
+          : ""
+      }
+      ${
+        briefing.sampleDepthLabel
+          ? `<p class="briefing-depth ${depthClass}">${esc(briefing.sampleDepthLabel)}</p>`
           : ""
       }
       <div class="briefing-stats">
@@ -236,6 +270,9 @@ function briefingHtml(briefing) {
           ? `<ul class="briefing-deltas">${deltas}</ul>`
           : ""
       }
+      <div class="toolbar" style="margin-top:12px">
+        <button type="button" class="btn btn-primary" id="open-briefing-meta">Open meta for this session</button>
+      </div>
       <p class="muted small" style="margin-top:10px">
         ${esc(briefing.series || "")}${briefing.weekNum ? ` · Week ${esc(briefing.weekNum)}` : ""}
         ${briefing.fingerprint ? ` · fp ${esc(briefing.fingerprint)}` : ""}
@@ -314,6 +351,7 @@ function renderDashboard(session) {
       </div>
 
       ${updateBannerHtml()}
+      ${watchlistToastsHtml(session.watchlistAlerts)}
       ${briefingHtml(session.latestBriefing)}
 
       <div class="grid grid-2">
@@ -376,6 +414,21 @@ function renderDashboard(session) {
 
   document.getElementById("briefing-upgrade")?.addEventListener("click", () => {
     window.splitmeta.openExternal(`${session.siteUrl}/account`);
+  });
+
+  document.getElementById("open-briefing-meta")?.addEventListener("click", async () => {
+    await window.splitmeta.openBriefingMeta();
+  });
+
+  document.querySelectorAll(".toast-open").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await window.splitmeta.dismissWatchlistAlert(btn.dataset.id, true);
+    });
+  });
+  document.querySelectorAll(".toast-dismiss").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await window.splitmeta.dismissWatchlistAlert(btn.dataset.id, false);
+    });
   });
 
   document.getElementById("toggle-watcher").addEventListener("click", async () => {

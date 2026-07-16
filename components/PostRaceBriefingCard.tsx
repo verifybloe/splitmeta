@@ -30,6 +30,19 @@ export function PostRaceBriefingCard({
           {briefing.action}
         </p>
       ) : null}
+      {briefing.pro && briefing.sampleDepthLabel ? (
+        <p
+          className={`mt-2 text-xs ${
+            briefing.sampleDepth === "solid"
+              ? "text-emerald-400"
+              : briefing.sampleDepth === "building"
+                ? "text-amber-400"
+                : "text-neutral-500"
+          }`}
+        >
+          {briefing.sampleDepthLabel}
+        </p>
+      ) : null}
 
       {briefing.pro && briefing.rank != null ? (
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -74,9 +87,9 @@ export function PostRaceBriefingCard({
       ) : null}
 
       <div className="mt-4 flex flex-wrap gap-3">
-        {bandHref ? (
+        {bandHref || briefing.boardHref ? (
           <Link
-            href={bandHref}
+            href={bandHref || briefing.boardHref}
             className="text-sm font-medium text-red-400 hover:text-red-300"
           >
             Open meta board →

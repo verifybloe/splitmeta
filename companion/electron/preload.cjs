@@ -14,6 +14,9 @@ contextBridge.exposeInMainWorld("splitmeta", {
   toggleAutoMode: () => ipcRenderer.invoke("toggle-auto-mode"),
   uploadLatest: () => ipcRenderer.invoke("upload-latest"),
   dismissBriefing: () => ipcRenderer.invoke("dismiss-briefing"),
+  dismissWatchlistAlert: (id, open) =>
+    ipcRenderer.invoke("dismiss-watchlist-alert", { id, open }),
+  openBriefingMeta: () => ipcRenderer.invoke("open-briefing-meta"),
   refreshSession: () => ipcRenderer.invoke("refresh-session"),
   getUpdateStatus: () => ipcRenderer.invoke("get-update-status"),
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),

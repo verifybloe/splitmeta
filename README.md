@@ -14,7 +14,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 | Full ranked meta board for your rating band | — | Yes |
 | Setup parameter deltas | — | Yes |
 | Setup parameter sheet (view / download) | — | Yes |
-| Watchlist + meta-moved alerts | — | Yes |
+| Watchlist + meta-moved alerts (web + companion) | — | Yes |
 | Post-race briefing (rank, pace vs band, deltas) | — | Yes |
 | Recent race history & Your week home | — | Yes |
 | Personal trend charts (finish, lap, iR) | — | Yes |

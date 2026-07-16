@@ -674,11 +674,16 @@ export type PostRaceBriefing = {
   sampleRaces: number;
   keyDeltas: string[];
   bandLabel: string;
+  band: string;
   series: string;
+  seriesId: string | null;
   track: string;
   weekNum: number;
   finishPos: number;
   fieldSize: number;
+  boardHref: string;
+  sampleDepth: "thin" | "building" | "solid" | null;
+  sampleDepthLabel: string;
   verdict: "leading" | "competitive" | "outlier" | "thin" | "unranked";
   headline: string;
   summary: string;
@@ -701,6 +706,11 @@ export async function buildPostRaceBriefing(input: {
   const base = {
     fingerprint: input.fingerprintShort,
     bandLabel,
+    band,
+    seriesId: null as string | null,
+    boardHref: `/meta?band=${encodeURIComponent(band)}`,
+    sampleDepth: null as PostRaceBriefing["sampleDepth"],
+    sampleDepthLabel: "",
     finishPos: input.finishPos,
     fieldSize: input.fieldSize,
     series: "",
@@ -749,20 +759,30 @@ export async function buildPostRaceBriefing(input: {
   }
 
   const meta = JSON.parse(row.payload) as WeeklyMetaView;
+  const depth = sampleDepthFromMeta(meta);
   const entry = meta.entries.find(
     (e) =>
       e.fingerprint === input.fingerprintShort ||
       e.fingerprint.startsWith(input.fingerprintShort),
   );
   const leader = meta.entries[0] ?? null;
+  const seriesId = meta.seriesId ?? null;
+  const boardHref = seriesId
+    ? `/meta?series=${encodeURIComponent(seriesId)}&band=${encodeURIComponent(meta.band)}`
+    : `/meta?band=${encodeURIComponent(meta.band)}`;
 
   const shared = {
     ...base,
     pro: true as const,
     series: meta.series,
+    seriesId,
     track: meta.track,
     weekNum: meta.weekNum,
+    band: meta.band,
     bandLabel: meta.bandLabel || bandLabel,
+    boardHref,
+    sampleDepth: depth.depth,
+    sampleDepthLabel: depth.label,
     totalSetups: meta.entries.length,
   };
 
