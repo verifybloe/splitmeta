@@ -13,6 +13,7 @@ import {
 } from "@/components/RaceHistoryList";
 import { listMetaAlerts, listWatchlist } from "@/lib/watchlist";
 import { getUserTrends } from "@/lib/trends";
+import { iracingApiConfigured } from "@/lib/iracing/client";
 
 export const metadata = {
   title: "My account — SplitMeta",
@@ -69,6 +70,7 @@ export default async function AccountPage({ searchParams }: Props) {
   ]);
 
   const unreadAlerts = watchAlerts.filter((a) => !a.readAt).length;
+  const iracingApiReady = iracingApiConfigured();
 
   return (
     <main className="relative flex-1 overflow-hidden bg-neutral-950 text-neutral-100">
@@ -189,6 +191,9 @@ export default async function AccountPage({ searchParams }: Props) {
                   {isPro
                     ? "Open Summary or Details on any race."
                     : `Free: full details on your ${FREE_RACE_DETAIL_LIMIT} latest races. Pro unlocks all.`}
+                  {iracingApiReady
+                    ? " Official iRacing sync available."
+                    : ""}
                 </p>
               </div>
               <p className="text-sm text-neutral-500">
@@ -214,8 +219,12 @@ export default async function AccountPage({ searchParams }: Props) {
                   races={races.map((race) => ({
                     ...race,
                     racedAt: race.racedAt.toISOString(),
+                    officialSyncedAt: race.officialSyncedAt
+                      ? race.officialSyncedAt.toISOString()
+                      : null,
                   }))}
                   isPro={isPro}
+                  iracingApiReady={iracingApiReady}
                 />
               )}
             </div>

@@ -21,6 +21,7 @@ export type RaceHistoryItem = {
   bestLapMs: number;
   avgLapMs: number;
   racedAt: string | Date;
+  officialSyncedAt?: string | Date | null;
   seriesWeekId: string;
   seriesWeek: {
     id: string;
@@ -74,12 +75,17 @@ function RaceRow({
   race,
   unlocked,
   isPro,
+  iracingApiReady,
 }: {
   race: RaceHistoryItem;
   unlocked: boolean;
   isPro: boolean;
+  iracingApiReady: boolean;
 }) {
   const [tab, setTab] = useState<"summary" | "details" | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [officialAt, setOfficialAt] = useState(race.officialSyncedAt ?? null);
   const trackName = race.seriesWeek.track.config
     ? `${race.seriesWeek.track.name} — ${race.seriesWeek.track.config}`
     : race.seriesWeek.track.name;
@@ -97,6 +103,33 @@ function RaceRow({
     setTab((cur) => (cur === next ? null : next));
   }
 
+  async function syncOfficial() {
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res = await fetch("/api/iracing/enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionResultId: race.id }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        enriched?: { ok?: boolean; reason?: string };
+      };
+      if (!res.ok || !data.ok) {
+        setSyncMsg(data.error ?? data.enriched?.reason ?? "Sync failed");
+      } else {
+        setOfficialAt(new Date().toISOString());
+        setSyncMsg("Synced from iRacing");
+      }
+    } catch {
+      setSyncMsg("Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <li className="py-4 first:pt-2 last:pb-2">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -109,6 +142,9 @@ function RaceRow({
             Week {race.seriesWeek.weekNum} ·{" "}
             {new Date(race.racedAt).toLocaleString()} · setup{" "}
             {shortFingerprint(race.setup.fingerprint)}
+            {officialAt ? (
+              <span className="ml-2 text-emerald-500">· Official</span>
+            ) : null}
           </p>
         </div>
         <div className="text-right text-sm">
@@ -160,6 +196,19 @@ function RaceRow({
             >
               Details
             </button>
+            {iracingApiReady ? (
+              <button
+                type="button"
+                disabled={syncing}
+                onClick={() => void syncOfficial()}
+                className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:border-neutral-500 disabled:opacity-50"
+              >
+                {syncing ? "Syncing…" : officialAt ? "Re-sync official" : "Sync official"}
+              </button>
+            ) : null}
+            {syncMsg ? (
+              <span className="text-xs text-neutral-500">{syncMsg}</span>
+            ) : null}
           </>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
@@ -301,9 +350,11 @@ function RaceRow({
 export function RaceHistoryList({
   races,
   isPro,
+  iracingApiReady = false,
 }: {
   races: RaceHistoryItem[];
   isPro: boolean;
+  iracingApiReady?: boolean;
 }) {
   return (
     <ul className="divide-y divide-neutral-800">
@@ -312,6 +363,7 @@ export function RaceHistoryList({
           key={race.id}
           race={race}
           isPro={isPro}
+          iracingApiReady={iracingApiReady}
           unlocked={isPro || index < FREE_RACE_DETAIL_LIMIT}
         />
       ))}

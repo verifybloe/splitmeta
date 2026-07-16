@@ -493,6 +493,7 @@ export async function getUserRecentRaces(userId: string, limit = 10) {
       bestLapMs: true,
       avgLapMs: true,
       racedAt: true,
+      officialSyncedAt: true,
       seriesWeekId: true,
       seriesWeek: {
         select: {

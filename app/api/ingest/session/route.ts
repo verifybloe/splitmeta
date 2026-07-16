@@ -333,6 +333,39 @@ export async function POST(req: Request) {
       });
     }
 
+    const custId = body.iracingCustId ?? user.iracingCustId ?? null;
+    let official: {
+      ok: boolean;
+      reason?: string;
+    } | null = null;
+    let finishPos = body.finishPos;
+    let fieldSize = body.fieldSize;
+    let iratingBefore = body.iratingBefore;
+
+    if (body.externalId && custId) {
+      try {
+        const { enrichSessionResultFromOfficial } = await import(
+          "@/lib/iracing/enrich"
+        );
+        const enriched = await enrichSessionResultFromOfficial({
+          sessionResultId: result.id,
+          subsessionId: body.externalId,
+          custId,
+          userId: user.id,
+        });
+        official = { ok: enriched.ok, reason: enriched.reason };
+        if (enriched.ok) {
+          if (enriched.finishPos != null) finishPos = enriched.finishPos;
+          if (enriched.fieldSize != null) fieldSize = enriched.fieldSize;
+          if (enriched.iratingBefore != null)
+            iratingBefore = enriched.iratingBefore;
+        }
+      } catch (err) {
+        console.error("Official results enrich failed:", err);
+        official = { ok: false, reason: "enrich error" };
+      }
+    }
+
     // Refresh rankings for this week so the board can leave mock data.
     try {
       await computeSeriesWeekMeta(seriesWeek.id);
@@ -347,9 +380,9 @@ export async function POST(req: Request) {
         plan: user.plan,
         seriesWeekId: seriesWeek.id,
         fingerprintShort: fpShort,
-        iratingBefore: body.iratingBefore,
-        finishPos: body.finishPos,
-        fieldSize: body.fieldSize,
+        iratingBefore,
+        finishPos,
+        fieldSize,
       });
     } catch (err) {
       console.error("Post-race briefing failed:", err);
@@ -362,6 +395,7 @@ export async function POST(req: Request) {
       fingerprint: fpShort,
       seriesWeekId: seriesWeek.id,
       briefing,
+      official,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ingest failed";

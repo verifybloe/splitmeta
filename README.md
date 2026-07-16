@@ -4,6 +4,8 @@
 
 Crowd-sourced iRacing **race** setup meta, ranked per series / week / rating band. **$8/mo Pro**. Qualifying is used only for start grid (positions gained/lost), never for board rankings.
 
+When iRacing OAuth is configured, uploads are enriched from the official `/data/results/get` subsession API (start, finish, iR, SOF, incidents).
+
 Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 
 ## Free vs Pro ($8/mo)
@@ -83,11 +85,21 @@ STRIPE_PRICE_ID
 STRIPE_WEBHOOK_SECRET
 CRON_SECRET          # required on Vercel; Vercel Cron sends Authorization: Bearer …
 ADMIN_GRANT_SECRET   # optional; protects POST /api/admin/grant-pro
+IRACING_OAUTH_CLIENT_ID       # optional — official results enrich
+IRACING_OAUTH_CLIENT_SECRET
+IRACING_OAUTH_USERNAME
+IRACING_OAUTH_PASSWORD
 ```
 
 Never commit real `.env` files — only `.env.example` (placeholders) belongs in git.
 
 Redeploy after saving.
+
+### 4b. iRacing official results (optional)
+
+1. Request an OAuth **Client ID / Secret** from iRacing ([oauth docs](https://oauth.iracing.com/oauth2/book/introduction.html)) and register your app user for **password_limited**.
+2. Set the four `IRACING_OAUTH_*` vars in Vercel.
+3. On each companion upload (with subsession id + cust id), SplitMeta calls `/data/results/get` and overwrites start/finish/iR/SOF/incidents with official values. Account → **Sync official** can re-run this.
 
 ### 5. Stripe Customer Portal
 

@@ -158,6 +158,8 @@ model SessionResult {
   bestLapMs     Int
   avgLapMs      Int
   racedAt       DateTime
+  /** Set when enriched from iRacing /data/results/get */
+  officialSyncedAt DateTime?
   createdAt     DateTime   @default(now())
 
   @@unique([userId, externalId])
