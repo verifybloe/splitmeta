@@ -73,7 +73,7 @@ function pickQualifySession(sessions) {
   );
 }
 
-function resolveStartPos(sessions, driverCarIdx, myResult, driver) {
+function resolveStartPos(sessions, driverCarIdx, myResult, driver, qualifyInfo) {
   const direct = Number(
     myResult?.StartingPosition ??
       myResult?.StartPosition ??
@@ -91,6 +91,12 @@ function resolveStartPos(sessions, driverCarIdx, myResult, driver) {
     null;
   const fromQualify = Number(qMine?.Position ?? qMine?.ClassPosition ?? 0);
   if (fromQualify > 0) return fromQualify;
+
+  const qr = Array.isArray(qualifyInfo?.Results) ? qualifyInfo.Results : [];
+  const qrMine = qr.find((r) => r?.CarIdx === driverCarIdx) ?? null;
+  const fromQualifyInfo = Number(qrMine?.Position ?? qrMine?.ClassPosition ?? 0);
+  if (fromQualifyInfo > 0) return fromQualifyInfo;
+
   return null;
 }
 
@@ -105,6 +111,7 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
   const driver = pickDriver(driverInfo.Drivers, driverCarIdx);
   const sessions = sessionInfo.Sessions;
   const session = pickRaceSession(sessions);
+  const qualifyInfo = map.get("QualifyResultsInfo") ?? null;
 
   const subSessionId =
     weekend.SubSessionID ??
@@ -180,7 +187,20 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
   const bestLapMs = Math.round(Number(bestLapSec) * 1000);
   const avgLapSec = myResult?.AverageLapTime ?? bestLapSec;
   const avgLapMs = Math.round(Number(avgLapSec || bestLapSec) * 1000);
-  const startPos = resolveStartPos(sessions, driverCarIdx, myResult, driver);
+  let startPos = resolveStartPos(
+    sessions,
+    driverCarIdx,
+    myResult,
+    driver,
+    qualifyInfo,
+  );
+  if (
+    (startPos == null || startPos <= 0) &&
+    telemetry?.startPos != null &&
+    telemetry.startPos > 0
+  ) {
+    startPos = telemetry.startPos;
+  }
 
   const fieldSize = Array.isArray(driverInfo.Drivers)
     ? driverInfo.Drivers.filter((d) => d?.UserName && !d?.IsSpectator).length

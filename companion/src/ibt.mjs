@@ -6,6 +6,8 @@ const VAR_HEADER_SIZE = 144;
 const DISK_SUBHEADER_SIZE = 32;
 
 // irsdk_SessionState
+const STATE_WARMUP = 2;
+const STATE_PARADE = 3;
 const STATE_RACING = 4;
 const STATE_CHECKERED = 5;
 const STATE_COOLDOWN = 6;
@@ -58,9 +60,28 @@ function readNumber(buf, meta) {
   return buf.readInt32LE(meta.offset);
 }
 
+function readSample(fd, dataStart, bufLen, index, vars) {
+  const buf = Buffer.alloc(bufLen);
+  readSync(fd, buf, 0, bufLen, dataStart + index * bufLen);
+  const sessionNum = readNumber(buf, vars.SessionNum);
+  const sessionState = readNumber(buf, vars.SessionState);
+  const position = readNumber(buf, vars.PlayerCarPosition) ?? 0;
+  return {
+    sessionNum,
+    sessionState,
+    position,
+    classPosition: readNumber(buf, vars.PlayerCarClassPosition) ?? 0,
+    incidents: readNumber(buf, vars.PlayerCarMyIncidentCount) ?? 0,
+    lap: readNumber(buf, vars.Lap) ?? 0,
+    lapCompleted: readNumber(buf, vars.LapCompleted) ?? 0,
+    bestLapSec: readNumber(buf, vars.LapBestLapTime) ?? 0,
+    lastLapSec: readNumber(buf, vars.LapLastLapTime) ?? 0,
+  };
+}
+
 /**
- * Read live telemetry samples from the end of an .ibt file.
- * Race ResultsPositions in YAML are often empty; position lives in samples.
+ * Read live telemetry samples from an .ibt file.
+ * Finish comes from the end of the race; start from early race/grid ticks.
  */
 export function readRaceTelemetrySummary(filePath) {
   const fd = openSync(filePath, "r");
@@ -89,48 +110,75 @@ export function readRaceTelemetrySummary(filePath) {
 
     const dataStart = header.sessionInfoOffset + header.sessionInfoLen;
     const records = disk.recordCount;
-
-    // Walk newest → oldest to find the latest race tick (prefer checkered/cooldown).
-    let best = null;
     const scanCount = Math.min(records, 20_000);
+
+    // Walk newest → oldest to find finish (prefer checkered/cooldown).
+    let finish = null;
     for (let n = 0; n < scanCount; n++) {
-      const i = records - 1 - n;
-      const buf = Buffer.alloc(header.bufLen);
-      readSync(fd, buf, 0, header.bufLen, dataStart + i * header.bufLen);
+      const sample = readSample(fd, dataStart, header.bufLen, records - 1 - n, vars);
+      if (sample.position <= 0) continue;
 
-      const sessionNum = readNumber(buf, vars.SessionNum);
-      const sessionState = readNumber(buf, vars.SessionState);
-      const position = readNumber(buf, vars.PlayerCarPosition) ?? 0;
-
-      // Skip practice (0) / qualify (1) when possible — race is usually the highest SessionNum used,
-      // but we accept any tick with a real position and late session state.
       const isLateState =
-        sessionState === STATE_CHECKERED || sessionState === STATE_COOLDOWN;
-      const isRacing = sessionState === STATE_RACING;
+        sample.sessionState === STATE_CHECKERED ||
+        sample.sessionState === STATE_COOLDOWN;
+      const isRacing = sample.sessionState === STATE_RACING;
 
-      if (position <= 0) continue;
-
-      const sample = {
-        sessionNum,
-        sessionState,
-        finishPos: position,
-        classPosition: readNumber(buf, vars.PlayerCarClassPosition) ?? 0,
-        incidents: readNumber(buf, vars.PlayerCarMyIncidentCount) ?? 0,
-        lap: readNumber(buf, vars.Lap) ?? 0,
-        lapCompleted: readNumber(buf, vars.LapCompleted) ?? 0,
-        bestLapSec: readNumber(buf, vars.LapBestLapTime) ?? 0,
-        lastLapSec: readNumber(buf, vars.LapLastLapTime) ?? 0,
+      const candidate = {
+        sessionNum: sample.sessionNum,
+        sessionState: sample.sessionState,
+        finishPos: sample.position,
+        classPosition: sample.classPosition,
+        incidents: sample.incidents,
+        lap: sample.lap,
+        lapCompleted: sample.lapCompleted,
+        bestLapSec: sample.bestLapSec,
+        lastLapSec: sample.lastLapSec,
         raceComplete: isLateState,
         stillRacing: isRacing,
+        startPos: null,
       };
 
       if (isLateState) {
-        return sample;
+        finish = candidate;
+        break;
       }
-      if (!best) best = sample;
+      if (!finish) finish = candidate;
     }
 
-    return best;
+    if (!finish) return null;
+
+    // Walk oldest → newest for grid / first green-flag position in that race session.
+    const raceSession = finish.sessionNum;
+    let startPos = null;
+    const forwardScan = Math.min(records, 40_000);
+    for (let i = 0; i < forwardScan; i++) {
+      const sample = readSample(fd, dataStart, header.bufLen, i, vars);
+      if (raceSession != null && sample.sessionNum !== raceSession) continue;
+      if (sample.position <= 0) continue;
+
+      const onGrid =
+        sample.sessionState === STATE_WARMUP ||
+        sample.sessionState === STATE_PARADE ||
+        sample.sessionState === STATE_RACING;
+      if (!onGrid) continue;
+
+      // Prefer pre-lap / lap-0 ticks as the true start.
+      const earlyRace =
+        sample.lapCompleted <= 0 ||
+        sample.lap <= 1 ||
+        sample.sessionState === STATE_WARMUP ||
+        sample.sessionState === STATE_PARADE;
+
+      if (earlyRace) {
+        startPos = sample.position;
+        break;
+      }
+      if (startPos == null) startPos = sample.position;
+    }
+
+    finish.startPos =
+      startPos != null && startPos > 0 ? Math.round(startPos) : null;
+    return finish;
   } finally {
     closeSync(fd);
   }
