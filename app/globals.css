@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --surface: #171717;
+  --border: #262626;
+  --muted: #a3a3a3;
+  --brand: #ef4444;
+  --brand-strong: #dc2626;
   --duration-exit: 160ms;
   --duration-enter: 220ms;
 }
@@ -10,21 +15,15 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-outfit);
+  --font-display: var(--font-barlow);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-outfit), system-ui, sans-serif;
 }
 
 html {
@@ -37,7 +36,126 @@ html {
   }
 }
 
-/* Soft page transitions (View Transitions API via Next experimental flag) */
+.font-display {
+  font-family: var(--font-barlow), var(--font-outfit), system-ui, sans-serif;
+}
+
+/* Shared brand atmosphere */
+.bg-brand-glow {
+  background:
+    radial-gradient(
+      ellipse 90% 60% at 50% -15%,
+      rgba(220, 38, 38, 0.22),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 45% 35% at 100% 0%,
+      rgba(220, 38, 38, 0.08),
+      transparent 50%
+    ),
+    #0a0a0a;
+}
+
+.bg-brand-glow-strong {
+  background:
+    radial-gradient(
+      ellipse 100% 75% at 70% -25%,
+      rgba(220, 38, 38, 0.3),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 0% 100%,
+      rgba(220, 38, 38, 0.1),
+      transparent 45%
+    ),
+    repeating-linear-gradient(
+      108deg,
+      transparent,
+      transparent 64px,
+      rgba(255, 255, 255, 0.015) 64px,
+      rgba(255, 255, 255, 0.015) 65px
+    ),
+    #0a0a0a;
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  background: var(--brand-strong);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  transition: background 0.15s ease;
+}
+.btn-primary:hover {
+  background: #ef4444;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid #404040;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  color: #e5e5e5;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.btn-secondary:hover {
+  border-color: #737373;
+  color: #fff;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #a3a3a3;
+  transition: color 0.15s ease;
+}
+.btn-ghost:hover {
+  color: #e5e5e5;
+}
+
+/* Status chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid #404040;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  color: #a3a3a3;
+  backdrop-filter: blur(6px);
+}
+.chip-ok {
+  border-color: rgba(4, 120, 87, 0.45);
+  color: #34d399;
+}
+.chip-warn {
+  border-color: rgba(180, 83, 9, 0.45);
+  color: #fbbf24;
+}
+.chip-alert {
+  border-color: rgba(220, 38, 38, 0.45);
+  background: rgba(220, 38, 38, 0.12);
+  color: #fca5a5;
+  font-weight: 500;
+}
+
+.surface-card {
+  border-radius: 0.75rem;
+  border: 1px solid #262626;
+  background: rgba(23, 23, 23, 0.92);
+}
+
+/* Soft page transitions */
 ::view-transition-old(.page-fade) {
   animation:
     var(--duration-exit) ease-out both page-fade-out,
@@ -82,7 +200,6 @@ html {
   }
 }
 
-/* Keep chrome steady while page content transitions */
 ::view-transition-group(site-header) {
   animation: none;
   z-index: 100;

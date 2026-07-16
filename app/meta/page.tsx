@@ -77,7 +77,7 @@ export default async function MetaBoard({ searchParams }: Props) {
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="font-display text-2xl font-bold tracking-wide">
               {hasLive ? meta.series : "Meta board"}
             </h1>
             <p className="mt-1 text-neutral-400">
@@ -86,19 +86,17 @@ export default async function MetaBoard({ searchParams }: Props) {
                 : "Live rankings from crowd-sourced race uploads"}
             </p>
             {hasLive ? (
-              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {updatedLabel ? (
-                  <span className="rounded-full border border-neutral-800 px-2.5 py-1 text-neutral-400">
-                    Updated {updatedLabel}
-                  </span>
+                  <span className="chip">Updated {updatedLabel}</span>
                 ) : null}
                 <span
-                  className={`rounded-full border px-2.5 py-1 ${
+                  className={`chip ${
                     depth.depth === "solid"
-                      ? "border-emerald-800 text-emerald-400"
+                      ? "chip-ok"
                       : depth.depth === "building"
-                        ? "border-amber-800 text-amber-400"
-                        : "border-neutral-800 text-neutral-500"
+                        ? "chip-warn"
+                        : ""
                   }`}
                 >
                   {depth.label}
@@ -106,14 +104,12 @@ export default async function MetaBoard({ searchParams }: Props) {
                     ? ` · ${depth.totalRaces} races · ${depth.setupCount} setups`
                     : ""}
                 </span>
-                <span className="rounded-full border border-neutral-800 px-2.5 py-1 text-neutral-500">
-                  Current week only
-                </span>
+                <span className="chip">Current week only</span>
               </div>
             ) : null}
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span className="rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-400">
+            <span className="chip">
               {hasLive
                 ? isPro
                   ? "Live meta · Pro unlocked"

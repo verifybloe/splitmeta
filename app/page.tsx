@@ -42,37 +42,30 @@ export default async function Home() {
           name={session?.user?.name}
         />
       ) : (
-        <section className="mx-auto max-w-5xl px-6 pb-16 pt-20 text-center">
-          <p className="mb-4 text-sm font-medium uppercase tracking-widest text-red-500">
-            For iRacing drivers
-          </p>
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight sm:text-5xl">
-            Know what&apos;s actually fast in{" "}
-            <span className="text-red-500">your split</span> — this week.
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-neutral-400">
-            Pro setups are built for aliens. SplitMeta ranks the setups real
-            drivers in your iRating band are winning with — per series, per week,
-            from crowd-sourced race results.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
-            <Link
-              href="/meta"
-              className="rounded-md bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500"
-            >
-              See this week&apos;s meta
-            </Link>
-            <Link
-              href={downloadHref}
-              className="rounded-md border border-neutral-700 px-6 py-3 font-semibold text-neutral-300 hover:border-neutral-500"
-            >
-              Download companion
-            </Link>
-            <a
-              href="#how"
-              className="rounded-md border border-neutral-700 px-6 py-3 font-semibold text-neutral-300 hover:border-neutral-500"
-            >
-              How it works
+        <section className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 bg-brand-glow" aria-hidden />
+          <div className="relative mx-auto max-w-5xl px-6 pb-16 pt-20 text-center sm:pt-24">
+            <p className="font-display mb-4 text-sm font-semibold tracking-[0.28em] text-red-500 uppercase">
+              SplitMeta
+            </p>
+            <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              Know what&apos;s actually fast in{" "}
+              <span className="text-red-500">your split</span> — this week.
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-lg text-neutral-400">
+              Crowd-sourced race setups ranked for your iRating band — not alien
+              telemetries.
+            </p>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/meta" className="btn-primary">
+                See this week&apos;s meta
+              </Link>
+              <Link href={downloadHref} className="btn-secondary">
+                Download companion
+              </Link>
+            </div>
+            <a href="#how" className="btn-ghost mt-5">
+              How it works ↓
             </a>
           </div>
         </section>
@@ -80,11 +73,11 @@ export default async function Home() {
 
       {!pulse ? (
         <section className="mx-auto max-w-5xl px-6 pb-20">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-6">
+          <div className="surface-card p-6 sm:p-7">
             {showBoard ? (
               <>
-                <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-lg font-semibold">
+                <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="text-lg font-semibold tracking-tight">
                     This week&apos;s top 3 —{" "}
                     {isLive ? "live" : "example preview"}
                   </h2>
@@ -93,7 +86,7 @@ export default async function Home() {
                   </span>
                 </div>
                 {isPreview && (
-                  <p className="mb-4 rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-500">
+                  <p className="mb-4 rounded-md border border-neutral-800 bg-neutral-950/80 px-3 py-2 text-xs text-neutral-500">
                     Example data for the landing page. Sign in and upload races to
                     see live rankings for your band.
                   </p>
@@ -102,15 +95,13 @@ export default async function Home() {
                   {topThree.map((entry) => (
                     <div
                       key={entry.fingerprint}
-                      className="rounded-lg border border-neutral-800 bg-neutral-950 p-4"
+                      className="rounded-lg border border-neutral-800 bg-neutral-950/70 p-4"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-2xl font-bold text-red-500">
+                        <span className="font-display text-2xl font-bold text-red-500">
                           #{entry.rank}
                         </span>
-                        <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">
-                          score {entry.score}
-                        </span>
+                        <span className="chip">score {entry.score}</span>
                       </div>
                       <p className="font-medium">{entry.setupLabel}</p>
                       <dl className="mt-3 space-y-1 text-sm text-neutral-400">
@@ -132,10 +123,9 @@ export default async function Home() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 text-sm text-neutral-500">
-                  Full rankings, setup parameter deltas, and post-race briefing are
-                  Pro features.{" "}
-                  <Link href="/meta" className="text-red-400 hover:underline">
+                <p className="mt-5 text-sm text-neutral-500">
+                  Full rankings and setup details are Pro.{" "}
+                  <Link href="/meta" className="text-red-400 hover:text-red-300">
                     Open the meta board →
                   </Link>
                 </p>
@@ -147,10 +137,7 @@ export default async function Home() {
                   Upload races with the SplitMeta app and rankings will show up
                   here from real driver data — not demos.
                 </p>
-                <Link
-                  href={downloadHref}
-                  className="mt-5 inline-block rounded-md bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
-                >
+                <Link href={downloadHref} className="btn-primary mt-5">
                   Get the app
                 </Link>
               </div>

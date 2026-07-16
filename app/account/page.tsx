@@ -74,22 +74,12 @@ export default async function AccountPage({ searchParams }: Props) {
 
   return (
     <main className="relative flex-1 overflow-hidden bg-neutral-950 text-neutral-100">
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={{
-          background: `
-            radial-gradient(ellipse 80% 50% at 10% -10%, rgba(220,38,38,0.18), transparent 50%),
-            radial-gradient(ellipse 50% 40% at 100% 0%, rgba(220,38,38,0.08), transparent 45%),
-            #0a0a0a
-          `,
-        }}
-      />
+      <div className="pointer-events-none absolute inset-0 bg-brand-glow" aria-hidden />
 
       <div className="relative mx-auto max-w-5xl px-6 py-10 sm:py-12">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="text-sm font-semibold tracking-[0.24em] text-red-500 uppercase">
+            <p className="font-display text-sm font-semibold tracking-[0.24em] text-red-500 uppercase">
               My account
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">

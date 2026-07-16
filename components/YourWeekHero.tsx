@@ -19,26 +19,9 @@ export function YourWeekHero({
   if (!pulse.hasRaces) {
     return (
       <section className="relative flex min-h-[calc(100dvh-4.5rem)] flex-col justify-center overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
-          style={{
-            background: `
-              radial-gradient(ellipse 90% 70% at 50% -20%, rgba(220,38,38,0.28), transparent 55%),
-              radial-gradient(ellipse 50% 40% at 100% 80%, rgba(220,38,38,0.08), transparent 50%),
-              repeating-linear-gradient(
-                -12deg,
-                transparent,
-                transparent 48px,
-                rgba(255,255,255,0.015) 48px,
-                rgba(255,255,255,0.015) 49px
-              ),
-              #0a0a0a
-            `,
-          }}
-        />
+        <div className="pointer-events-none absolute inset-0 bg-brand-glow-strong" aria-hidden />
         <div className="relative mx-auto w-full max-w-5xl px-6 py-16">
-          <p className="text-sm font-semibold tracking-[0.28em] text-red-500 uppercase">
+          <p className="font-display text-sm font-semibold tracking-[0.28em] text-red-500 uppercase">
             SplitMeta
           </p>
           <h1 className="mt-6 max-w-3xl text-5xl font-bold tracking-tight text-neutral-50 sm:text-6xl lg:text-7xl">
@@ -48,17 +31,11 @@ export function YourWeekHero({
             Hey {greet} — race with the companion on, and this screen becomes your
             band&apos;s live meta pulse.
           </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link
-              href="/download"
-              className="rounded-md bg-red-600 px-7 py-3.5 text-base font-semibold text-white hover:bg-red-500"
-            >
+          <div className="mt-10 flex flex-wrap items-center gap-3">
+            <Link href="/download" className="btn-primary px-7 py-3.5 text-base">
               Get the app
             </Link>
-            <Link
-              href="/meta"
-              className="rounded-md border border-neutral-600 px-7 py-3.5 text-base font-semibold text-neutral-200 hover:border-neutral-400"
-            >
+            <Link href="/meta" className="btn-secondary px-7 py-3.5 text-base">
               Browse meta
             </Link>
           </div>
@@ -82,30 +59,13 @@ export function YourWeekHero({
 
   return (
     <section className="relative flex min-h-[calc(100dvh-4.5rem)] flex-col overflow-hidden">
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={{
-          background: `
-            radial-gradient(ellipse 100% 80% at 70% -30%, rgba(220,38,38,0.32), transparent 52%),
-            radial-gradient(ellipse 60% 50% at 0% 100%, rgba(220,38,38,0.12), transparent 45%),
-            repeating-linear-gradient(
-              108deg,
-              transparent,
-              transparent 64px,
-              rgba(255,255,255,0.018) 64px,
-              rgba(255,255,255,0.018) 65px
-            ),
-            linear-gradient(180deg, #0a0a0a 0%, #111 45%, #0a0a0a 100%)
-          `,
-        }}
-      />
+      <div className="pointer-events-none absolute inset-0 bg-brand-glow-strong" aria-hidden />
 
       <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col justify-between px-6 py-10 sm:py-12 lg:py-14">
         <div>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold tracking-[0.28em] text-red-500 uppercase">
+              <p className="font-display text-sm font-semibold tracking-[0.28em] text-red-500 uppercase">
                 SplitMeta
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight text-neutral-50 sm:text-5xl lg:text-6xl">
@@ -121,18 +81,16 @@ export function YourWeekHero({
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs sm:justify-end">
               {pulse.board?.updatedLabel ? (
-                <span className="border border-neutral-700/80 bg-black/30 px-3 py-1.5 text-neutral-400 backdrop-blur-sm">
-                  Updated {pulse.board.updatedLabel}
-                </span>
+                <span className="chip">Updated {pulse.board.updatedLabel}</span>
               ) : null}
               {pulse.board?.depth ? (
                 <span
-                  className={`border px-3 py-1.5 backdrop-blur-sm ${
+                  className={`chip ${
                     pulse.board.depth.depth === "solid"
-                      ? "border-emerald-700/50 text-emerald-400"
+                      ? "chip-ok"
                       : pulse.board.depth.depth === "building"
-                        ? "border-amber-700/50 text-amber-400"
-                        : "border-neutral-700/80 text-neutral-400"
+                        ? "chip-warn"
+                        : ""
                   }`}
                 >
                   {pulse.board.depth.label}
@@ -142,12 +100,10 @@ export function YourWeekHero({
                 </span>
               ) : null}
               {moved ? (
-                <span className="animate-pulse border border-red-600/50 bg-red-600/15 px-3 py-1.5 font-medium text-red-400">
-                  Meta moved
-                </span>
+                <span className="chip chip-alert animate-pulse">Meta moved</span>
               ) : null}
               {pulse.alerts.length > 0 ? (
-                <span className="border border-red-600/40 bg-red-600/10 px-3 py-1.5 font-medium text-red-300">
+                <span className="chip chip-alert">
                   {pulse.alerts.length} watch alert
                   {pulse.alerts.length === 1 ? "" : "s"}
                 </span>
@@ -274,32 +230,23 @@ export function YourWeekHero({
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-6 border-t border-neutral-800/80 pt-8 sm:mt-16 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={boardHref}
-              className="rounded-md bg-red-600 px-7 py-3.5 text-base font-semibold text-white hover:bg-red-500"
-            >
+        <div className="mt-14 flex flex-col gap-5 border-t border-neutral-800/80 pt-8 sm:mt-16 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={boardHref} className="btn-primary px-7 py-3.5 text-base">
               Open your board
             </Link>
-            <Link
-              href="/download"
-              className="rounded-md border border-neutral-600 px-7 py-3.5 text-base font-semibold text-neutral-200 hover:border-neutral-400"
-            >
+            <Link href="/download" className="btn-secondary px-7 py-3.5 text-base">
               Companion app
             </Link>
-            <Link
-              href="/account"
-              className="rounded-md border border-neutral-600 px-7 py-3.5 text-base font-semibold text-neutral-200 hover:border-neutral-400"
-            >
-              My account
+            <Link href="/account" className="btn-ghost">
+              My account →
             </Link>
             {!isPro ? (
               <Link
                 href="/account"
-                className="rounded-md border border-red-700/50 px-7 py-3.5 text-base font-semibold text-red-400 hover:border-red-500"
+                className="btn-ghost text-red-400 hover:text-red-300"
               >
-                Unlock Pro
+                Unlock Pro →
               </Link>
             ) : null}
           </div>

@@ -36,14 +36,11 @@ export default async function DownloadPage() {
 
   return (
     <main className="relative flex-1 overflow-hidden bg-neutral-950 text-neutral-100">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(220,38,38,0.18),transparent)]"
-      />
+      <div className="pointer-events-none absolute inset-0 bg-brand-glow" aria-hidden />
 
       <div className="relative mx-auto max-w-5xl px-6 pb-20 pt-14">
         <div className="max-w-2xl">
-          <p className="text-sm font-medium uppercase tracking-widest text-red-500">
+          <p className="font-display text-sm font-semibold tracking-[0.24em] text-red-500 uppercase">
             Windows app
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
@@ -52,12 +49,12 @@ export default async function DownloadPage() {
           </h1>
           <p className="mt-4 text-lg text-neutral-400">
             Download SplitMeta-Setup.exe, run it, open SplitMeta from your Desktop
-            — dashboard, sign-in, auto-upload. No batch files or Node.js required.
+            — dashboard, sign-in, auto-upload.
           </p>
         </div>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-red-600/40 bg-gradient-to-br from-neutral-900 to-neutral-950 p-8 shadow-[0_0_60px_-12px_rgba(220,38,38,0.35)]">
+          <div className="surface-card border-red-600/30 p-8 shadow-[0_0_50px_-16px_rgba(220,38,38,0.3)]">
             <p className="text-sm font-medium text-red-400">Windows installer</p>
             <h2 className="mt-1 text-2xl font-bold">SplitMeta-Setup.exe</h2>
             <p className="mt-1 text-sm text-neutral-400">

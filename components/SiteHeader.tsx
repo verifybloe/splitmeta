@@ -8,13 +8,13 @@ export async function SiteHeader() {
 
   return (
     <header
-      className="border-b border-neutral-800"
+      className="sticky top-0 z-50 border-b border-neutral-800/80 bg-neutral-950/85 backdrop-blur-md"
       style={{ viewTransitionName: "site-header" }}
     >
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3.5">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
+          className="font-display flex shrink-0 items-center gap-2 text-xl font-bold tracking-wide"
         >
           <img
             src="/favicon-32.png"
@@ -25,52 +25,51 @@ export async function SiteHeader() {
           />
           Split<span className="text-red-500">Meta</span>
         </Link>
-        <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm text-neutral-400">
-          <Link href="/meta" className="hover:text-white">
-            Meta board
+        <nav className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-sm text-neutral-400">
+          <Link href="/meta" className="transition hover:text-white">
+            Meta
           </Link>
           {session?.user ? (
             <>
-              <Link href="/download" className="hover:text-white">
-                Download
-              </Link>
               <Link
                 href="/account"
-                className="inline-flex items-center gap-2 font-medium text-neutral-200 hover:text-white"
+                className="inline-flex items-center gap-2 font-medium text-neutral-200 transition hover:text-white"
               >
-                My account
+                Account
                 {isPro ? (
-                  <span className="rounded bg-red-600/20 px-1.5 py-0.5 text-xs font-semibold text-red-400">
+                  <span className="rounded-full bg-red-600/20 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-red-400 uppercase">
                     Pro
                   </span>
                 ) : null}
               </Link>
-              {!isPro && <BillingButton />}
+              {!isPro && (
+                <BillingButton
+                  label="Go Pro"
+                  className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-500"
+                />
+              )}
               <form
                 action={async () => {
                   "use server";
                   await signOut({ redirectTo: "/" });
                 }}
               >
-                <button type="submit" className="hover:text-white">
+                <button
+                  type="submit"
+                  className="text-neutral-500 transition hover:text-white"
+                >
                   Sign out
                 </button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/login" className="hover:text-white">
+              <Link href="/login" className="transition hover:text-white">
                 Sign in
               </Link>
               <Link
-                href="/login?callbackUrl=/download"
-                className="hover:text-white"
-              >
-                Download
-              </Link>
-              <Link
                 href="/login?callbackUrl=/account"
-                className="rounded-md bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-500"
+                className="btn-primary px-3 py-1.5 text-sm"
               >
                 Go Pro — $8/mo
               </Link>
