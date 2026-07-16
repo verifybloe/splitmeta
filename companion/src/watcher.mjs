@@ -124,13 +124,15 @@ export async function processIbtFile(config, filePath, { dryRun = false, onProgr
       );
       const payload = parseSessionYaml(yamlText, filePath, filePath);
 
-      if (
-        payload.sessionType &&
-        !payload.sessionType.toLowerCase().includes("race")
-      ) {
+      const sessionType = String(payload.sessionType ?? "");
+      const isRace =
+        payload.isRace === true ||
+        sessionType.toLowerCase().includes("race");
+
+      if (!isRace) {
         return {
           skipped: true,
-          reason: `not a race session (${payload.sessionType})`,
+          reason: `not a race session (${sessionType || "unknown"})`,
         };
       }
 

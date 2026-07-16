@@ -2,7 +2,7 @@
 
 **Know what's actually fast in *your* split — this week.**
 
-Crowd-sourced iRacing setup meta, ranked per series / week / rating band. **$8/mo Pro**.
+Crowd-sourced iRacing **race** setup meta, ranked per series / week / rating band. **$8/mo Pro**. Qualifying is used only for start grid (positions gained/lost), never for board rankings.
 
 Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 

@@ -21,14 +21,17 @@ function pickDriver(drivers, driverCarIdx) {
   return drivers.find((d) => d?.UserName) ?? drivers[0] ?? null;
 }
 
+function isRaceSessionType(type) {
+  const t = String(type ?? "").toLowerCase();
+  // "Race", "Heat Race", etc. — never Practice / Qualify / Warmup alone.
+  return t.includes("race");
+}
+
 function pickRaceSession(sessions) {
   if (!Array.isArray(sessions)) return null;
-  const race = sessions.find((s) =>
-    String(s?.SessionType ?? "")
-      .toLowerCase()
-      .includes("race"),
-  );
-  return race ?? sessions[sessions.length - 1] ?? null;
+  const races = sessions.filter((s) => isRaceSessionType(s?.SessionType));
+  // Prefer the last race session in the weekend (feature / main).
+  return races.length ? races[races.length - 1] : null;
 }
 
 function flattenSetup(obj, prefix = "", out = {}) {
@@ -112,6 +115,46 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
   const sessions = sessionInfo.Sessions;
   const session = pickRaceSession(sessions);
   const qualifyInfo = map.get("QualifyResultsInfo") ?? null;
+  const isRace = Boolean(session && isRaceSessionType(session.SessionType));
+
+  // Practice / qualify-only files must not feed the meta board.
+  if (!isRace) {
+    const fallbackType =
+      Array.isArray(sessions) && sessions.length
+        ? String(sessions[sessions.length - 1]?.SessionType ?? "unknown")
+        : "unknown";
+    return {
+      externalId: String(
+        weekend.SubSessionID ??
+          weekend.subSessionID ??
+          (fileName.replace(/\D/g, "") || fileName),
+      ),
+      series: String(weekend.SeriesName ?? "iRacing series"),
+      seriesCategory: String(weekend.Category ?? "Sports Car"),
+      car: "Unknown car",
+      carCategory: String(weekend.Category ?? "Sports Car"),
+      track: String(weekend.TrackDisplayName ?? weekend.TrackName ?? "Unknown track"),
+      trackConfig: weekend.TrackConfigName ? String(weekend.TrackConfigName) : "",
+      seasonYear: new Date().getFullYear(),
+      seasonQuarter: Math.ceil((new Date().getMonth() + 1) / 3),
+      weekNum: Number(weekend.RaceWeek ?? weekend.Week ?? 1) || 1,
+      sof: 0,
+      iratingBefore: 0,
+      iratingAfter: 0,
+      startPos: null,
+      finishPos: 0,
+      fieldSize: 1,
+      incidents: 0,
+      bestLapMs: 1,
+      avgLapMs: 1,
+      racedAt: new Date().toISOString(),
+      setupParams: {},
+      isRace: false,
+      sessionType: fallbackType,
+      waitingForResults: false,
+      raceComplete: false,
+    };
+  }
 
   const subSessionId =
     weekend.SubSessionID ??
@@ -258,7 +301,8 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
     setupParams,
     iracingCustId: driver?.UserID ? Number(driver.UserID) : undefined,
     displayName: driver?.UserName ? String(driver.UserName) : undefined,
-    sessionType: session?.SessionType ? String(session.SessionType) : undefined,
+    isRace: true,
+    sessionType: session?.SessionType ? String(session.SessionType) : "Race",
     waitingForResults,
     raceComplete: Boolean(telemetry?.raceComplete),
   };

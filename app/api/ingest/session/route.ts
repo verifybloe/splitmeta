@@ -33,6 +33,8 @@ type IngestBody = {
   setupParams: Record<string, unknown>;
   iracingCustId?: number;
   displayName?: string;
+  sessionType?: string;
+  isRace?: boolean;
 };
 
 function badRequest(message: string) {
@@ -145,6 +147,9 @@ function parseBody(raw: unknown): { data?: IngestBody; error?: string } {
         typeof body.iracingCustId === "number" ? body.iracingCustId : undefined,
       displayName:
         typeof body.displayName === "string" ? body.displayName : undefined,
+      sessionType:
+        typeof body.sessionType === "string" ? body.sessionType : undefined,
+      isRace: typeof body.isRace === "boolean" ? body.isRace : undefined,
     },
   };
 }
@@ -196,6 +201,16 @@ export async function POST(req: Request) {
       return badRequest(parsed.error ?? "Invalid body");
     }
     const body = parsed.data;
+
+    const sessionType = String(body.sessionType ?? "").toLowerCase();
+    if (body.isRace === false) {
+      return badRequest("Only race sessions are accepted for meta");
+    }
+    if (sessionType && !sessionType.includes("race")) {
+      return badRequest(
+        `Only race sessions are accepted (got ${body.sessionType})`,
+      );
+    }
 
     if (body.externalId) {
       const existing = await prisma.sessionResult.findUnique({
