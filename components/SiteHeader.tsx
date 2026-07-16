@@ -14,7 +14,7 @@ export async function SiteHeader() {
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-3.5">
         <Link
           href="/"
-          className="font-display flex shrink-0 items-center gap-2 text-xl font-bold tracking-wide"
+          className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
         >
           <img
             src="/favicon-32.png"
