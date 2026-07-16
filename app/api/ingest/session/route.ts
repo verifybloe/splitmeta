@@ -24,6 +24,7 @@ type IngestBody = {
   iratingBefore: number;
   iratingAfter: number;
   finishPos: number;
+  startPos?: number | null;
   fieldSize: number;
   incidents: number;
   bestLapMs: number;
@@ -127,6 +128,12 @@ function parseBody(raw: unknown): { data?: IngestBody; error?: string } {
       sof: parsed.sof,
       iratingBefore: parsed.iratingBefore,
       iratingAfter: parsed.iratingAfter,
+      startPos:
+        typeof body.startPos === "number" &&
+        Number.isFinite(body.startPos) &&
+        body.startPos > 0
+          ? Math.round(body.startPos)
+          : null,
       finishPos: parsed.finishPos,
       fieldSize: parsed.fieldSize,
       incidents: parsed.incidents,
@@ -284,6 +291,7 @@ export async function POST(req: Request) {
         sof: body.sof,
         iratingBefore: body.iratingBefore,
         iratingAfter: body.iratingAfter,
+        startPos: body.startPos ?? null,
         finishPos: body.finishPos,
         fieldSize: body.fieldSize,
         incidents: body.incidents,

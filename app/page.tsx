@@ -286,6 +286,7 @@ export default async function Home() {
                     <li>Setup parameter deltas</li>
                     <li>View / download full parameter sheets</li>
                     <li>Watchlist alerts in the companion</li>
+                    <li>Full race details on every upload</li>
                     <li>Companion Auto mode</li>
                     <li>Post-race briefing in the app</li>
                     <li>Personal history &amp; your-week home</li>

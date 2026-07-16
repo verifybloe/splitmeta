@@ -17,6 +17,7 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 | Watchlist + meta-moved alerts (web + companion) | — | Yes |
 | Post-race briefing (rank, pace vs band, deltas) | — | Yes |
 | Recent race history & Your week home | — | Yes |
+| Full race details (start, positions, SOF, iR) | Latest 3 | All |
 | Personal trend charts (finish, lap, iR) | — | Yes |
 | Companion Auto mode (detect session & upload) | — | Yes |
 

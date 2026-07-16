@@ -62,6 +62,38 @@ function resultsArray(session) {
   return Array.isArray(results) ? results : [];
 }
 
+function pickQualifySession(sessions) {
+  if (!Array.isArray(sessions)) return null;
+  return (
+    sessions.find((s) =>
+      String(s?.SessionType ?? "")
+        .toLowerCase()
+        .includes("qual"),
+    ) ?? null
+  );
+}
+
+function resolveStartPos(sessions, driverCarIdx, myResult, driver) {
+  const direct = Number(
+    myResult?.StartingPosition ??
+      myResult?.StartPosition ??
+      myResult?.GridPosition ??
+      driver?.StartingPosition ??
+      driver?.QualifyingPosition ??
+      0,
+  );
+  if (direct > 0) return direct;
+
+  const qualify = pickQualifySession(sessions);
+  const qResults = resultsArray(qualify);
+  const qMine =
+    qResults.find((r) => r?.CarIdx === driverCarIdx) ??
+    null;
+  const fromQualify = Number(qMine?.Position ?? qMine?.ClassPosition ?? 0);
+  if (fromQualify > 0) return fromQualify;
+  return null;
+}
+
 export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
   const map = docsToMap(yamlText);
   const weekend = map.get("WeekendInfo") ?? {};
@@ -71,7 +103,8 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
 
   const driverCarIdx = driverInfo.DriverCarIdx ?? 0;
   const driver = pickDriver(driverInfo.Drivers, driverCarIdx);
-  const session = pickRaceSession(sessionInfo.Sessions);
+  const sessions = sessionInfo.Sessions;
+  const session = pickRaceSession(sessions);
 
   const subSessionId =
     weekend.SubSessionID ??
@@ -147,6 +180,7 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
   const bestLapMs = Math.round(Number(bestLapSec) * 1000);
   const avgLapSec = myResult?.AverageLapTime ?? bestLapSec;
   const avgLapMs = Math.round(Number(avgLapSec || bestLapSec) * 1000);
+  const startPos = resolveStartPos(sessions, driverCarIdx, myResult, driver);
 
   const fieldSize = Array.isArray(driverInfo.Drivers)
     ? driverInfo.Drivers.filter((d) => d?.UserName && !d?.IsSpectator).length
@@ -194,6 +228,7 @@ export function parseSessionYaml(yamlText, fileName = "", filePath = "") {
     sof: Number(weekend.StrengthOfField ?? weekend.SOF ?? 0),
     iratingBefore: Number(iratingBefore),
     iratingAfter: Number(iratingAfter),
+    startPos: startPos != null && startPos > 0 ? Number(startPos) : null,
     finishPos: Number(finishPos) || 0,
     fieldSize: Number(fieldSize) || 1,
     incidents: Number(incidents) || 0,

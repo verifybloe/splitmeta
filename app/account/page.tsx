@@ -7,6 +7,10 @@ import { BillingButton } from "@/components/BillingButton";
 import { PostRaceBriefingCard } from "@/components/PostRaceBriefingCard";
 import { WatchlistPanel } from "@/components/WatchlistPanel";
 import { RaceTrends } from "@/components/RaceTrends";
+import {
+  FREE_RACE_DETAIL_LIMIT,
+  RaceHistoryList,
+} from "@/components/RaceHistoryList";
 import { listMetaAlerts, listWatchlist } from "@/lib/watchlist";
 import { getUserTrends } from "@/lib/trends";
 
@@ -19,14 +23,6 @@ export const dynamic = "force-dynamic";
 type Props = {
   searchParams: Promise<{ checkout?: string }>;
 };
-
-function formatLap(ms: number) {
-  if (!ms || ms <= 0) return "—";
-  const totalSec = ms / 1000;
-  const m = Math.floor(totalSec / 60);
-  const s = (totalSec % 60).toFixed(3).padStart(6, "0");
-  return `${m}:${s}`;
-}
 
 export default async function AccountPage({ searchParams }: Props) {
   const session = await auth();
@@ -189,6 +185,11 @@ export default async function AccountPage({ searchParams }: Props) {
                 <h2 className="mt-0.5 text-lg font-semibold text-neutral-100">
                   Your uploads
                 </h2>
+                <p className="mt-1 text-xs text-neutral-500">
+                  {isPro
+                    ? "Open Summary or Details on any race."
+                    : `Free: full details on your ${FREE_RACE_DETAIL_LIMIT} latest races. Pro unlocks all.`}
+                </p>
               </div>
               <p className="text-sm text-neutral-500">
                 {races.length} race{races.length === 1 ? "" : "s"}
@@ -209,59 +210,13 @@ export default async function AccountPage({ searchParams }: Props) {
                   </Link>
                 </div>
               ) : (
-                <ul className="divide-y divide-neutral-800">
-                  {races.map((race) => {
-                    const trackName = race.seriesWeek.track.config
-                      ? `${race.seriesWeek.track.name} — ${race.seriesWeek.track.config}`
-                      : race.seriesWeek.track.name;
-                    const irDelta = race.iratingAfter - race.iratingBefore;
-                    const irLabel =
-                      irDelta === 0
-                        ? "iR ±0"
-                        : `iR ${irDelta > 0 ? "+" : ""}${irDelta}`;
-                    return (
-                      <li key={race.id} className="py-4 first:pt-2 last:pb-2">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="font-medium">
-                              {race.seriesWeek.series.name}
-                            </p>
-                            <p className="mt-0.5 text-sm text-neutral-400">
-                              {race.setup.car.name} · {trackName}
-                            </p>
-                            <p className="mt-1 text-xs text-neutral-500">
-                              Week {race.seriesWeek.weekNum} ·{" "}
-                              {new Date(race.racedAt).toLocaleString()} · setup{" "}
-                              {shortFingerprint(race.setup.fingerprint)}
-                            </p>
-                          </div>
-                          <div className="text-right text-sm">
-                            <p className="text-lg font-semibold">
-                              P{race.finishPos}
-                              <span className="text-base font-normal text-neutral-500">
-                                /{race.fieldSize}
-                              </span>
-                            </p>
-                            <p className="text-neutral-400">
-                              {formatLap(race.bestLapMs)} · {race.incidents}x ·{" "}
-                              <span
-                                className={
-                                  irDelta > 0
-                                    ? "text-emerald-400"
-                                    : irDelta < 0
-                                      ? "text-red-400"
-                                      : ""
-                                }
-                              >
-                                {irLabel}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <RaceHistoryList
+                  races={races.map((race) => ({
+                    ...race,
+                    racedAt: race.racedAt.toISOString(),
+                  }))}
+                  isPro={isPro}
+                />
               )}
             </div>
           </div>
