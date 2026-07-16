@@ -14,6 +14,7 @@ import {
 import { listMetaAlerts, listWatchlist } from "@/lib/watchlist";
 import { getUserTrends } from "@/lib/trends";
 import { iracingApiConfigured } from "@/lib/iracing/client";
+import { getUserPlan } from "@/lib/security";
 
 export const metadata = {
   title: "My account — SplitMeta",
@@ -32,7 +33,7 @@ export default async function AccountPage({ searchParams }: Props) {
   }
 
   const { checkout } = await searchParams;
-  const isPro = session.user.plan === "PRO";
+  const isPro = (await getUserPlan(session.user.id)) === "PRO";
   const displayName =
     session.user.name?.split(" ")[0] ||
     session.user.email?.split("@")[0] ||
@@ -206,13 +207,28 @@ export default async function AccountPage({ searchParams }: Props) {
                 </div>
               ) : (
                 <RaceHistoryList
-                  races={races.map((race) => ({
-                    ...race,
-                    racedAt: race.racedAt.toISOString(),
-                    officialSyncedAt: race.officialSyncedAt
-                      ? race.officialSyncedAt.toISOString()
-                      : null,
-                  }))}
+                  races={races.map((race, index) => {
+                    const unlocked = isPro || index < FREE_RACE_DETAIL_LIMIT;
+                    const base = {
+                      ...race,
+                      racedAt: race.racedAt.toISOString(),
+                      officialSyncedAt: race.officialSyncedAt
+                        ? race.officialSyncedAt.toISOString()
+                        : null,
+                    };
+                    if (unlocked) return base;
+                    // Free: do not ship full detail fields for locked races
+                    return {
+                      ...base,
+                      sof: 0,
+                      startPos: null,
+                      avgLapMs: 0,
+                      iratingBefore: 0,
+                      iratingAfter: race.iratingAfter,
+                      bestLapMs: race.bestLapMs,
+                      incidents: race.incidents,
+                    };
+                  })}
                   isPro={isPro}
                   iracingApiReady={iracingApiReady}
                 />

@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeEmail } from "@/lib/password";
+import { secretsEqual } from "@/lib/security";
 
 export const runtime = "nodejs";
 
 /**
- * One-time / ops helper: grant complimentary Pro.
- * POST { "email": "user@example.com" }
- * Header: x-admin-secret: ADMIN_GRANT_SECRET
+ * Ops-only: grant or revoke complimentary Pro.
+ * POST { "email": "...", "action"?: "revoke" }
+ * Header: x-admin-secret: ADMIN_GRANT_SECRET (min 24 chars)
  */
 export async function POST(req: Request) {
-  const expected = process.env.ADMIN_GRANT_SECRET;
-  const provided = req.headers.get("x-admin-secret");
+  const expected = process.env.ADMIN_GRANT_SECRET ?? "";
+  const provided = req.headers.get("x-admin-secret") ?? "";
 
-  if (!expected || !provided || provided !== expected) {
+  if (expected.length < 24 || !secretsEqual(provided, expected)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,12 +32,31 @@ export async function POST(req: Request) {
 
   const existing = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, email: true, plan: true },
+    select: {
+      id: true,
+      email: true,
+      plan: true,
+      stripeSubscriptionId: true,
+    },
   });
 
   if (body.action === "revoke") {
     if (!existing) {
-      return NextResponse.json({ error: `No user found for ${email}` }, { status: 404 });
+      return NextResponse.json(
+        { error: `No user found for ${email}` },
+        { status: 404 },
+      );
+    }
+    // Do not strip an active paid Stripe subscription via this tool —
+    // paid users must cancel through Stripe / portal.
+    if (existing.stripeSubscriptionId) {
+      return NextResponse.json(
+        {
+          error:
+            "User has an active Stripe subscription — revoke via Stripe portal, not grant-pro.",
+        },
+        { status: 409 },
+      );
     }
     const user = await prisma.user.update({
       where: { id: existing.id },
@@ -53,12 +73,20 @@ export async function POST(req: Request) {
         stripeCurrentPeriodEnd: true,
       },
     });
+    console.info(`[grant-pro] revoked ${email}`);
     return NextResponse.json({ ok: true, revoked: true, user });
   }
 
-  // Comp Pro only — never elevates to any admin role (there isn't one).
-  // Creates the user shell if they haven't signed up yet so Google/email
-  // login with this address picks up PRO immediately.
+  if (existing?.stripeSubscriptionId) {
+    return NextResponse.json(
+      {
+        error:
+          "User already has a Stripe subscription — no complimentary override.",
+      },
+      { status: 409 },
+    );
+  }
+
   const user = existing
     ? await prisma.user.update({
         where: { id: existing.id },
@@ -88,6 +116,10 @@ export async function POST(req: Request) {
           stripeCurrentPeriodEnd: true,
         },
       });
+
+  console.info(
+    `[grant-pro] ${existing ? "updated" : "created"} ${email} → PRO`,
+  );
 
   return NextResponse.json({
     ok: true,

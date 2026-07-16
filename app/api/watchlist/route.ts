@@ -24,8 +24,13 @@ export async function GET(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
-  if (session.user.plan !== "PRO") {
-    return NextResponse.json({ error: "Pro required" }, { status: 403 });
+  const { requireProUser } = await import("@/lib/security");
+  const gate = await requireProUser(session.user.id);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: gate.status === 401 ? "Sign in required" : "Pro required" },
+      { status: gate.status },
+    );
   }
 
   const url = new URL(req.url);
@@ -49,8 +54,13 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
-  if (session.user.plan !== "PRO") {
-    return NextResponse.json({ error: "Pro required" }, { status: 403 });
+  const { requireProUser } = await import("@/lib/security");
+  const gate = await requireProUser(session.user.id);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: gate.status === 401 ? "Sign in required" : "Pro required" },
+      { status: gate.status },
+    );
   }
 
   let body: {

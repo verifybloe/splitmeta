@@ -59,7 +59,7 @@ export default async function CompanionConnectPage({ searchParams }: Props) {
   callback.searchParams.set("companionToken", creds.companionToken);
   callback.searchParams.set("apiKey", creds.apiKey);
   callback.searchParams.set("email", creds.email);
-  callback.searchParams.set("plan", creds.plan);
+  // Plan is never trusted from the URL — companion refreshes from /api/companion/session.
   callback.searchParams.set("name", creds.name ?? "");
   callback.searchParams.set("siteUrl", creds.siteUrl);
 

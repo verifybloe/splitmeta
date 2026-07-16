@@ -10,6 +10,7 @@ import {
   listLiveSeriesOptions,
   sampleDepthFromMeta,
 } from "@/lib/metaCompute";
+import { getUserPlan, redactMetaForClient } from "@/lib/security";
 import { BillingButton } from "@/components/BillingButton";
 import { MetaSetupDetails } from "@/components/MetaSetupDetails";
 import { MetaEntryResults } from "@/components/MetaEntryResults";
@@ -37,7 +38,9 @@ function metaHref(opts: { band?: string; seriesId?: string }) {
 
 export default async function MetaBoard({ searchParams }: Props) {
   const session = await auth();
-  const isPro = session?.user?.plan === "PRO";
+  const isPro = session?.user?.id
+    ? (await getUserPlan(session.user.id)) === "PRO"
+    : false;
   const { band, series: seriesParam } = await searchParams;
   const preferredBand =
     band && RATING_BANDS.some((b) => b.id === band) ? band : undefined;
@@ -49,11 +52,12 @@ export default async function MetaBoard({ searchParams }: Props) {
       : seriesOptions[0]?.seriesId;
 
   // Current series week only — newest week with data for that series.
-  const { meta, source } = await getLatestMetaBoard(preferredBand, {
+  const { meta: rawMeta, source } = await getLatestMetaBoard(preferredBand, {
     seriesId: selectedSeriesId,
   });
+  const meta = redactMetaForClient(rawMeta, isPro);
   const hasLive = source === "live" && meta.entries.length > 0;
-  const depth = sampleDepthFromMeta(meta);
+  const depth = sampleDepthFromMeta(rawMeta);
   const updatedLabel = meta.computedAt
     ? formatRelativeTime(meta.computedAt)
     : "";
@@ -252,24 +256,28 @@ export default async function MetaBoard({ searchParams }: Props) {
                     <div className="flex gap-6 text-sm">
                       <div className="text-right">
                         <p className="text-neutral-500">Score</p>
-                        <p className="text-lg font-semibold">{entry.score}</p>
+                        <p className="text-lg font-semibold">
+                          {locked ? "—" : entry.score}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-neutral-500">Pace vs band</p>
                         <p className="text-lg font-semibold text-emerald-400">
-                          {formatPaceDelta(entry.paceDeltaMs)}
+                          {locked ? "—" : formatPaceDelta(entry.paceDeltaMs)}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-neutral-500">Top-5 rate</p>
                         <p className="text-lg font-semibold">
-                          {Math.round(entry.topFiveRate * 100)}%
+                          {locked
+                            ? "—"
+                            : `${Math.round(entry.topFiveRate * 100)}%`}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-neutral-500">Avg inc.</p>
                         <p className="text-lg font-semibold">
-                          {entry.avgIncidents.toFixed(1)}
+                          {locked ? "—" : entry.avgIncidents.toFixed(1)}
                         </p>
                       </div>
                     </div>
@@ -288,12 +296,26 @@ export default async function MetaBoard({ searchParams }: Props) {
                     </ul>
                   )}
 
-                  {/* Race results stay visible so the board shows how people actually finished. */}
-                  <MetaEntryResults
-                    races={entry.sampleResults ?? []}
-                    sampleRaces={entry.sampleRaces}
-                    isPro={isPro}
-                  />
+                  {!locked ? (
+                    <MetaEntryResults
+                      races={entry.sampleResults ?? []}
+                      sampleRaces={
+                        isPro
+                          ? entry.sampleRaces
+                          : Math.min(
+                              entry.sampleRaces,
+                              entry.sampleResults?.length ?? 0,
+                            )
+                      }
+                      isPro={isPro}
+                    />
+                  ) : (
+                    <p className="mt-3 text-sm text-neutral-500">
+                      {entry.sampleRaces} race
+                      {entry.sampleRaces === 1 ? "" : "s"} sampled · unlock Pro
+                      for results and setup details.
+                    </p>
+                  )}
 
                   {!locked && isPro && meta.seriesWeekId ? (
                     <MetaSetupDetails
@@ -302,12 +324,6 @@ export default async function MetaBoard({ searchParams }: Props) {
                       setupLabel={entry.setupLabel}
                     />
                   ) : null}
-
-                  {locked && (
-                    <p className="mt-3 text-sm text-neutral-500">
-                      Setup name, deltas, and parameter sheets unlock on Pro.
-                    </p>
-                  )}
                 </div>
               );
             })}

@@ -16,13 +16,28 @@ function periodEnd(subscription: Stripe.Subscription): Date {
 }
 
 async function setProFromSubscription(subscription: Stripe.Subscription) {
+  const allowed =
+    subscription.status === "active" || subscription.status === "trialing";
+  if (!allowed) {
+    throw new Error(
+      `Refusing PRO grant for subscription status=${subscription.status}`,
+    );
+  }
+
+  const expectedPrice = process.env.STRIPE_PRICE_ID;
+  const priceId = subscription.items.data[0]?.price.id;
+  if (expectedPrice && priceId && priceId !== expectedPrice) {
+    throw new Error(
+      `Refusing PRO grant for unexpected price ${priceId}`,
+    );
+  }
+
   const userId = subscription.metadata.userId;
   const customerId =
     typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer.id;
 
-  const priceId = subscription.items.data[0]?.price.id;
   const where = userId ? { id: userId } : { stripeCustomerId: customerId };
 
   await prisma.user.update({
@@ -92,7 +107,12 @@ export async function POST(req: Request) {
           });
           subscription.metadata.userId = session.metadata.userId;
         }
-        await setProFromSubscription(subscription);
+        if (
+          subscription.status === "active" ||
+          subscription.status === "trialing"
+        ) {
+          await setProFromSubscription(subscription);
+        }
       }
       break;
     }
@@ -105,6 +125,25 @@ export async function POST(req: Request) {
         await setProFromSubscription(subscription);
       } else {
         await setFreeFromSubscription(subscription);
+      }
+      break;
+    }
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice & {
+        subscription?: string | { id: string } | null;
+      };
+      const subRef =
+        typeof invoice.subscription === "string"
+          ? invoice.subscription
+          : invoice.subscription?.id;
+      if (subRef) {
+        const subscription = await stripe.subscriptions.retrieve(subRef);
+        if (
+          subscription.status !== "active" &&
+          subscription.status !== "trialing"
+        ) {
+          await setFreeFromSubscription(subscription);
+        }
       }
       break;
     }

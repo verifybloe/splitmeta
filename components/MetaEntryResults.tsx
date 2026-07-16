@@ -4,8 +4,10 @@ import { useState } from "react";
 import type { MetaSampleRace } from "@/lib/mockMeta";
 import { BillingButton } from "@/components/BillingButton";
 
+import { FREE_BOARD_RACE_LIMIT } from "@/lib/limits";
+
 /** Free users see this many sample races per unlocked setup on the board. */
-export const FREE_BOARD_RACE_LIMIT = 3;
+export { FREE_BOARD_RACE_LIMIT };
 
 function formatLap(ms: number) {
   if (!ms || ms <= 0) return "—";

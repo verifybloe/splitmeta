@@ -212,6 +212,39 @@ export async function POST(req: Request) {
       );
     }
 
+    const { INGEST_DAILY_LIMIT } = await import("@/lib/limits");
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentUploads = await prisma.sessionResult.count({
+      where: { userId: user.id, createdAt: { gte: dayAgo } },
+    });
+    if (recentUploads >= INGEST_DAILY_LIMIT) {
+      return NextResponse.json(
+        {
+          error: `Upload limit reached (${INGEST_DAILY_LIMIT}/day). Try again tomorrow.`,
+        },
+        { status: 429 },
+      );
+    }
+
+    // Basic sanity — reject absurd fabricated values
+    if (
+      body.finishPos < 1 ||
+      body.finishPos > 80 ||
+      body.fieldSize < 1 ||
+      body.fieldSize > 80 ||
+      body.finishPos > body.fieldSize ||
+      body.incidents < 0 ||
+      body.incidents > 99 ||
+      body.bestLapMs < 20_000 ||
+      body.bestLapMs > 600_000 ||
+      body.iratingBefore < 0 ||
+      body.iratingBefore > 20_000 ||
+      body.iratingAfter < 0 ||
+      body.iratingAfter > 20_000
+    ) {
+      return badRequest("Race stats out of accepted range");
+    }
+
     if (body.externalId) {
       const existing = await prisma.sessionResult.findUnique({
         where: {

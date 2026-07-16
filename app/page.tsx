@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatPaceDelta } from "@/lib/mockMeta";
 import { getLatestMetaBoard, getUserWeekPulse } from "@/lib/metaCompute";
 import { auth } from "@/auth";
+import { getUserPlan } from "@/lib/security";
 import { BillingButton } from "@/components/BillingButton";
 import { YourWeekHero } from "@/components/YourWeekHero";
 
@@ -10,7 +11,10 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const session = await auth();
   const isLoggedIn = Boolean(session?.user);
-  const isPro = session?.user?.plan === "PRO";
+  const isPro =
+    isLoggedIn && session?.user?.id
+      ? (await getUserPlan(session.user.id)) === "PRO"
+      : false;
   const downloadHref = isLoggedIn
     ? "/download"
     : "/login?callbackUrl=/download";
@@ -19,7 +23,7 @@ export default async function Home() {
     isLoggedIn && session?.user?.id
       ? await getUserWeekPulse(
           session.user.id,
-          session.user.plan === "PRO" ? "PRO" : "FREE",
+          isPro ? "PRO" : "FREE",
         )
       : null;
 

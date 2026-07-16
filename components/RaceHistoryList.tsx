@@ -6,8 +6,10 @@ import { BillingButton } from "@/components/BillingButton";
 import { iratingToBand, shortFingerprint } from "@/lib/ingest";
 import { RATING_BANDS } from "@/lib/mockMeta";
 
+import { FREE_RACE_DETAIL_LIMIT } from "@/lib/limits";
+
 /** Free users can open full details on this many most-recent races. */
-export const FREE_RACE_DETAIL_LIMIT = 3;
+export { FREE_RACE_DETAIL_LIMIT };
 
 export type RaceHistoryItem = {
   id: string;

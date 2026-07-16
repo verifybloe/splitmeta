@@ -360,15 +360,20 @@ function startAutoLoop() {
 
 function setAutoMode(enabled) {
   if (!session) return false;
-  if (enabled && session.plan !== "PRO") {
-    session.autoMode = false;
-    session = pushActivity(session, {
-      type: "info",
-      message: "Auto mode is Pro — upgrade on splitmeta.net/account",
-    });
-    saveSession(session);
-    broadcastState();
-    return false;
+  if (enabled) {
+    // Never trust a locally edited plan — refresh from server first.
+    // (validateSession overwrites session.plan from DB.)
+    // Callers that toggle on should have a fresh session; still gate here.
+    if (session.plan !== "PRO") {
+      session.autoMode = false;
+      session = pushActivity(session, {
+        type: "info",
+        message: "Auto mode is Pro — upgrade on splitmeta.net/account",
+      });
+      saveSession(session);
+      broadcastState();
+      return false;
+    }
   }
   session.autoMode = Boolean(enabled);
   if (session.autoMode) {
@@ -418,11 +423,12 @@ function waitForAuthCallback(expectedState) {
           apiKey: url.searchParams.get("apiKey") ?? "",
           email: url.searchParams.get("email") ?? "",
           name: url.searchParams.get("name") ?? "",
-          plan: url.searchParams.get("plan") ?? "FREE",
+          // Never trust plan from the browser callback URL — fetch from API below.
+          plan: "FREE",
           telemetryDir: session?.telemetryDir ?? defaultSession().telemetryDir,
           uploaded: session?.uploaded ?? [],
           activity: [],
-          autoMode: session?.autoMode ?? false,
+          autoMode: false,
         };
 
         if (!isLoggedIn(next)) {
@@ -438,14 +444,23 @@ function waitForAuthCallback(expectedState) {
           message: `Signed in as ${next.email}`,
         });
         saveSession(session);
-        if (session.autoMode) startAutoLoop();
 
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(
           "<html><body style='font-family:sans-serif;background:#0a0a0a;color:#fff;text-align:center;padding:48px'><h1>Connected!</h1><p>You can close this tab and return to SplitMeta.</p></body></html>",
         );
         server.close();
-        resolve(session);
+
+        // Resolve after closing HTTP so plan refresh can run without stalling the browser.
+        void validateSession().then(() => {
+          if (session?.autoMode) startAutoLoop();
+          broadcastState();
+          resolve(session);
+        }).catch(() => {
+          broadcastState();
+          resolve(session);
+        });
+        return;
       } catch (err) {
         server.close();
         reject(err);
@@ -465,11 +480,12 @@ async function finishLoginFromCredentials(creds) {
     apiKey: creds.apiKey ?? "",
     email: creds.email ?? "",
     name: creds.name ?? "",
-    plan: creds.plan ?? "FREE",
+    // Plan comes only from /api/companion/session after validateSession.
+    plan: "FREE",
     telemetryDir: session?.telemetryDir ?? defaultSession().telemetryDir,
     uploaded: session?.uploaded ?? [],
     activity: [],
-    autoMode: session?.autoMode ?? false,
+    autoMode: false,
   };
 
   if (!isLoggedIn(next)) {
@@ -852,19 +868,19 @@ ipcMain.handle("toggle-auto-mode", async () => {
     return { ok: false, autoMode: false, error: "Sign in first" };
   }
   const turningOn = !session.autoMode;
-  if (turningOn && session.plan !== "PRO") {
-    session = pushActivity(session, {
-      type: "info",
-      message: "Auto mode is Pro — upgrade at splitmeta.net/account",
-    });
-    saveSession(session);
-    broadcastState();
-    return {
-      ok: false,
-      autoMode: false,
-      needsPro: true,
-      error: "Auto mode is a Pro feature",
-    };
+  if (turningOn) {
+    const ok = await validateSession();
+    if (!ok || session.plan !== "PRO") {
+      session.autoMode = false;
+      saveSession(session);
+      broadcastState();
+      return {
+        ok: false,
+        autoMode: false,
+        needsPro: true,
+        error: "Auto mode is a Pro feature",
+      };
+    }
   }
   const autoMode = setAutoMode(turningOn);
   return { ok: true, autoMode };
