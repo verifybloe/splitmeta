@@ -11,11 +11,30 @@ type SetupAgg = {
   carName: string;
   results: Array<{
     bestLapMs: number;
+    avgLapMs: number;
     finishPos: number;
+    startPos: number | null;
     fieldSize: number;
     incidents: number;
+    sof: number;
+    iratingBefore: number;
+    iratingAfter: number;
+    racedAt: Date;
+    driverLabel: string;
   }>;
 };
+
+const MAX_SAMPLE_RESULTS = 20;
+
+function driverPublicLabel(user: {
+  displayName: string | null;
+  name: string | null;
+}): string {
+  const raw = (user.displayName || user.name || "").trim();
+  if (!raw) return "Driver";
+  // First word only — avoid full legal names when possible
+  return raw.split(/\s+/)[0] || "Driver";
+}
 
 function median(values: number[]): number {
   if (values.length === 0) return 0;
@@ -107,7 +126,12 @@ export async function computeSeriesWeekMeta(seriesWeekId: string) {
       setups: {
         include: {
           car: true,
-          results: true,
+          results: {
+            include: {
+              user: { select: { displayName: true, name: true } },
+            },
+            orderBy: { racedAt: "desc" },
+          },
         },
       },
     },
@@ -144,9 +168,16 @@ export async function computeSeriesWeekMeta(seriesWeekId: string) {
         carName: setup.car.name,
         results: bandResults.map((r) => ({
           bestLapMs: r.bestLapMs,
+          avgLapMs: r.avgLapMs,
           finishPos: r.finishPos,
+          startPos: r.startPos ?? null,
           fieldSize: r.fieldSize,
           incidents: r.incidents,
+          sof: r.sof,
+          iratingBefore: r.iratingBefore,
+          iratingAfter: r.iratingAfter,
+          racedAt: r.racedAt,
+          driverLabel: driverPublicLabel(r.user),
         })),
       });
 
@@ -195,6 +226,18 @@ export async function computeSeriesWeekMeta(seriesWeekId: string) {
             numericParams(setup.params),
             bandAvgParams,
           ),
+          sampleResults: setup.results.slice(0, MAX_SAMPLE_RESULTS).map((r) => ({
+            finishPos: r.finishPos,
+            startPos: r.startPos,
+            fieldSize: r.fieldSize,
+            bestLapMs: r.bestLapMs,
+            avgLapMs: r.avgLapMs,
+            incidents: r.incidents,
+            sof: r.sof,
+            irDelta: r.iratingAfter - r.iratingBefore,
+            racedAt: r.racedAt.toISOString(),
+            driverLabel: r.driverLabel,
+          })),
         };
       })
       .sort((a, b) => b.score - a.score || a.paceDeltaMs - b.paceDeltaMs)

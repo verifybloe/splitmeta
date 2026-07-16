@@ -11,7 +11,8 @@ Live: [https://www.splitmeta.net](https://www.splitmeta.net)
 | Feature | Free | Pro |
 |---|---|---|
 | Weekly top-3 teaser per series | Yes | Yes |
-| Full ranked meta board for your rating band | — | Yes |
+| Full ranked meta board for your rating band | Top 3 | Yes |
+| Sample race results on the board | 3 per setup | All |
 | Setup parameter deltas | — | Yes |
 | Setup parameter sheet (view / download) | — | Yes |
 | Watchlist + meta-moved alerts (web + companion) | — | Yes |

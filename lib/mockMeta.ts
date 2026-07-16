@@ -1,6 +1,20 @@
 // Shared types + helpers. MOCK data is only used on the public landing page
 // when there is no live WeeklyMeta yet (marketing preview).
 
+export type MetaSampleRace = {
+  finishPos: number;
+  startPos: number | null;
+  fieldSize: number;
+  bestLapMs: number;
+  avgLapMs: number;
+  incidents: number;
+  sof: number;
+  irDelta: number;
+  racedAt: string;
+  /** Public label — never email */
+  driverLabel: string;
+};
+
 export type MetaEntry = {
   rank: number;
   setupLabel: string;
@@ -11,6 +25,8 @@ export type MetaEntry = {
   topFiveRate: number; // 0-1
   avgIncidents: number;
   keyDeltas: string[]; // human-readable "what this setup runs differently"
+  /** Recent races that make up this setup’s sample (newest first). */
+  sampleResults?: MetaSampleRace[];
 };
 
 export type WeeklyMetaView = {
@@ -60,6 +76,44 @@ export const MOCK_WEEKLY_META: WeeklyMetaView = {
         "-2 rear wing vs band average",
         "+0.4 psi LF / RF cold pressure",
         "Softer front ARB for Eau Rouge compression",
+      ],
+      sampleResults: [
+        {
+          finishPos: 2,
+          startPos: 5,
+          fieldSize: 18,
+          bestLapMs: 137_412,
+          avgLapMs: 138_900,
+          incidents: 1,
+          sof: 2450,
+          irDelta: 18,
+          racedAt: "2026-07-14T20:12:00Z",
+          driverLabel: "Alex",
+        },
+        {
+          finishPos: 4,
+          startPos: 3,
+          fieldSize: 16,
+          bestLapMs: 137_880,
+          avgLapMs: 139_200,
+          incidents: 2,
+          sof: 2380,
+          irDelta: 6,
+          racedAt: "2026-07-13T19:40:00Z",
+          driverLabel: "Jordan",
+        },
+        {
+          finishPos: 1,
+          startPos: 2,
+          fieldSize: 20,
+          bestLapMs: 137_050,
+          avgLapMs: 138_400,
+          incidents: 0,
+          sof: 2510,
+          irDelta: 24,
+          racedAt: "2026-07-12T21:05:00Z",
+          driverLabel: "Sam",
+        },
       ],
     },
     {

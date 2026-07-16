@@ -12,6 +12,7 @@ import {
 } from "@/lib/metaCompute";
 import { BillingButton } from "@/components/BillingButton";
 import { MetaSetupDetails } from "@/components/MetaSetupDetails";
+import { MetaEntryResults } from "@/components/MetaEntryResults";
 import { WatchlistButton } from "@/components/WatchlistButton";
 import { isWatching } from "@/lib/watchlist";
 import type { RatingBand } from "@/generated/prisma/client";
@@ -279,29 +280,36 @@ export default async function MetaBoard({ searchParams }: Props) {
                   </div>
 
                   {!locked && (
-                    <>
-                      <ul className="mt-4 flex flex-wrap gap-2">
-                        {entry.keyDeltas.map((delta) => (
-                          <li
-                            key={delta}
-                            className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300"
-                          >
-                            {delta}
-                          </li>
-                        ))}
-                      </ul>
-                      {isPro && meta.seriesWeekId ? (
-                        <MetaSetupDetails
-                          seriesWeekId={meta.seriesWeekId}
-                          fingerprint={entry.fingerprint}
-                          setupLabel={entry.setupLabel}
-                        />
-                      ) : null}
-                    </>
+                    <ul className="mt-4 flex flex-wrap gap-2">
+                      {entry.keyDeltas.map((delta) => (
+                        <li
+                          key={delta}
+                          className="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300"
+                        >
+                          {delta}
+                        </li>
+                      ))}
+                    </ul>
                   )}
+
+                  {/* Race results stay visible so the board shows how people actually finished. */}
+                  <MetaEntryResults
+                    races={entry.sampleResults ?? []}
+                    sampleRaces={entry.sampleRaces}
+                    isPro={isPro}
+                  />
+
+                  {!locked && isPro && meta.seriesWeekId ? (
+                    <MetaSetupDetails
+                      seriesWeekId={meta.seriesWeekId}
+                      fingerprint={entry.fingerprint}
+                      setupLabel={entry.setupLabel}
+                    />
+                  ) : null}
+
                   {locked && (
-                    <p className="mt-4 text-sm text-neutral-500">
-                      Parameter sheets and deltas available on Pro.
+                    <p className="mt-3 text-sm text-neutral-500">
+                      Setup name, deltas, and parameter sheets unlock on Pro.
                     </p>
                   )}
                 </div>
@@ -316,8 +324,8 @@ export default async function MetaBoard({ searchParams }: Props) {
               Unlock the full board for your band — $8/mo
             </p>
             <p className="mt-1 text-sm text-neutral-400">
-              Full rankings, parameter sheets, watchlist alerts, trend charts,
-              post-race briefing, and your recent race history.
+              Full rankings, parameter sheets, all sample race results, watchlist
+              alerts, trend charts, and post-race briefing.
             </p>
             <div className="mt-4 flex justify-center gap-3">
               {session?.user ? (
